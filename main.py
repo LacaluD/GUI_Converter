@@ -3,6 +3,7 @@ from PyQt6.QtCore import QSize
 import sys
 
 from UI.tabs.pictures_tab import PicturesTab
+from UI.tabs.main_tab import ConverterTab
 
 
 class MainWindow(QMainWindow):
@@ -16,25 +17,28 @@ class MainWindow(QMainWindow):
         status_bar = self.statusBar()
         status_bar.showMessage("On the main tab")
         
+        tabs.currentChanged.connect(lambda index: self.on_tab_changed(index, tabs, status_bar))
+        
         # Creating tabs
-        main_tab1 = QWidget()
-        main_tab1_layout = QVBoxLayout()
-        main_tab1_layout.addWidget(QLabel("Content of tab 1"))
-        main_tab1.setLayout(main_tab1_layout)
+        main_tab1 = ConverterTab(self)
         
-        tab2_info = QWidget()
-        tab2_info_layout = QVBoxLayout()
-        tab2_info_layout.addWidget(QLabel("Some info about developer"))
-        tab2_info.setLayout(tab2_info_layout)
+        tab2_pictures = PicturesTab(self)
         
-        tab3_pictures = PicturesTab(self)
-        
+        tab3_info = QWidget()
+        tab3_info_layout = QVBoxLayout()
+        tab3_info_layout.addWidget(QLabel("Some info about developer"))
+        tab3_info.setLayout(tab3_info_layout)
+
         # Adding tabs to QTabWidgets
-        tabs.addTab(main_tab1, "Tab 1")
-        tabs.addTab(tab2_info, "About")
-        tabs.addTab(tab3_pictures, "Pictures")
+        tabs.addTab(main_tab1, "Main")
+        tabs.addTab(tab2_pictures, "Pictures")
+        tabs.addTab(tab3_info, "About")
         
         self.setCentralWidget(tabs)
+        
+    def on_tab_changed(self, index, tabs, status_bar):
+        tab_name = tabs.tabText(index)
+        status_bar.showMessage(f"Switched to: '{tab_name}' ")
 
 app = QApplication([])
 window = MainWindow()
