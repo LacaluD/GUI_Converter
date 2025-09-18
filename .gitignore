@@ -1,0 +1,68 @@
+# Python cache
+__pycache__
+__pycache__/
+*.pyc
+
+# Virtual environments
+.env
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# IDE / editor settings
+.idea/
+.vscode/
+.DS_Store
+
+# Build / distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+wheels/
+sdist/
+downloads/
+develop-eggs/
+
+# Logs
+*.log
+
+# Project-specific
+TODO.md
+PROJECT_GOAL.md
+PROJECT_STRUCTURE.md
+test/
+tests/
+test_logs/
+configs/
+TEMP/
+Garbage/
+logs/
+Dep_Check_full.py.py
+file_monitor.log
+How should be.md
+full_vers.py
+test_cpu_block.py
+test_network_block.py
+test_disk_block.py
+test.*
+mac-vendor.db
+.venv/
+content.png
+
+# Other
+cython_debug/
+.pytype/
+__pypackages__/
+pipenv.lock
+.python-version
+/site
+.mo
+.pot
+pip-log.txt
+*.manifest
+*.spec
