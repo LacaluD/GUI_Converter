@@ -1,15 +1,21 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog
-# from PyQt6.QtGui import 
+from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
 import os
 from PIL import Image
+
+supported_convert_extensions_pictures = ['.png', '.jpg', '.jpeg']
+supported_convert_extensions_files = ['.txt', '.docx', '.json', '.csv']
+supported_convert_extensions_videos = ['.mp3', '.mp4', '.wav']
 
 
 class ConverterTab(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window  # ссылка на главное окно
+        
+        self.extension_format = " "
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -25,18 +31,25 @@ class ConverterTab(QWidget):
         
         self.clear_btn = QPushButton("Clear")
         self.clear_btn.setFixedSize(100, 40)
-        self.clear_btn.clicked.connect(self.clear_all_files)
+        self.clear_btn.clicked.connect(self.clear_all_fields)
         
         self.show_first_str_btn = QPushButton("Show")
         self.show_first_str_btn.setFixedSize(100, 40)
-        self.show_first_str_btn.clicked.connect(self.show_couple_rows)
+        self.show_first_str_btn.clicked.connect(self.show_preview_picture)
         
         self.save_converted_btn = QPushButton("Save as")
         self.save_converted_btn.setFixedSize(100, 40)
         self.save_converted_btn.clicked.connect(self.save_output)
         
+        self.help_btn = QPushButton("Help")
+        self.help_btn.setFixedSize(100, 40)
+        
+        self.help_btn.setToolTip("Full instructions about this tab")
+        self.help_btn.clicked.connect(self.show_help_dialog)
+        
         # Adding buttons to top line of UI(uplad, convert, clear, show first, save as, )
-        buttons_layout.addWidget(self.load_inpt_file_btn)
+        buttons_layout.addStretch(1)
+        buttons_layout.addWidget(self.load_inpt_file_btn, alignment=Qt.AlignmentFlag.AlignVCenter)
         buttons_layout.addSpacing(10)
         buttons_layout.addWidget(self.convert_btn)
         buttons_layout.addSpacing(10)
@@ -45,13 +58,97 @@ class ConverterTab(QWidget):
         buttons_layout.addWidget(self.show_first_str_btn)
         buttons_layout.addSpacing(10)
         buttons_layout.addWidget(self.save_converted_btn)
+        buttons_layout.addSpacing(10)
+        buttons_layout.addWidget(self.help_btn)
         buttons_layout.addStretch(1)
 
+        # Creating frame for info/buttons above main-buttons
+        frame = QFrame()
+        
+        frame.setFrameShape(QFrame.Shape.Box)
+        frame.setFrameShadow(QFrame.Shadow.Sunken)
+        frame.setLineWidth(2)
+        frame.setFixedWidth(500)
+        
+        
+        # Creating boxlayout with buttons and Qlabels
+        frame_layout = QVBoxLayout()
+        row_layout = QHBoxLayout()
+        row_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        row_layout.addWidget(QLabel("From "))
+        
+        self.format_field = QLineEdit()
+        self.format_field.setText("No file loaded")
+        self.format_field.setReadOnly(True)
+        self.format_field.setFixedWidth(100)
+        row_layout.addWidget(self.format_field, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        row_layout.addWidget(QLabel("To "))
+        
+        self.drop_down_list = QComboBox()
+        formats = self.get_output_file_format_list()
+        self.drop_down_list.clear()
+        self.drop_down_list.addItems(formats)  # Фйнкция с проверкой формата инпут файла
+        self.drop_down_list.setFixedSize(100, 30)
+        row_layout.addWidget(self.drop_down_list)
+
+        frame_layout.addLayout(row_layout)
+        frame.setLayout(frame_layout)
+        
+        
+        
+        # Createing preview window
+        pre_show_window_frame = QFrame()
+        pre_show_window_frame.setFrameShape(QFrame.Shape.Box)
+        pre_show_window_frame.setFrameShadow(QFrame.Shadow.Sunken)
+        pre_show_window_frame.setLineWidth(2)
+        pre_show_window_frame.setStyleSheet("background-color: lightgray;")
+        
+        pre_show_window_frame_layout = QVBoxLayout()
+        
+        self.preview_title = QLabel("Preview area")
+        pre_show_window_frame_layout.addWidget(self.preview_title, alignment=Qt.AlignmentFlag.AlignHCenter)
+        
+        self.preview_info = QLabel("Chose your file and format to convert to. Press 'Convert' to convert.")
+        pre_show_window_frame_layout.addWidget(self.preview_info, alignment=Qt.AlignmentFlag.AlignHCenter)
+        
+        
+        self.preview_label = QLabel()
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setScaledContents(True)
+        pre_show_window_frame_layout.addWidget(self.preview_label)
+        
+        pre_show_window_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        pre_show_window_frame.setLayout(pre_show_window_frame_layout)
+        
+        
         self.layout.addLayout(buttons_layout)
-        self.layout.addStretch(1)
+        self.layout.addWidget(frame, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(pre_show_window_frame)
         self.setLayout(self.layout)
         
-    def upload_inpt_file(self, file=None):
+        
+    
+    def get_extension_format(self, inpt_f):
+        self.main_window.statusBar().showMessage("get ext format func started")
+        
+        try:
+            ext = os.path.splitext(inpt_f)[1].lower()
+            if not ext:
+                ext = "no extension"
+            self.extension_format = ext
+            self.format_field.setText(ext)
+        except Exception as e:
+            self.main_window.statusBar().showMessage(str(e))
+            return ext
+        
+        self.format_field.setText(self.extension_format)
+        
+        self.main_window.statusBar().showMessage("Successfully got format")
+
+        
+    def upload_inpt_file(self):
         self.main_window.statusBar().showMessage("Upload file clicked")
         
         try:
@@ -63,15 +160,27 @@ class ConverterTab(QWidget):
             self.main_window.statusBar().showMessage("File is not choosen")
             return
         
+        self.current_file = file
+        self.get_extension_format(file)
+        
+        formats = self.get_output_file_format_list()
+        self.drop_down_list.clear()
+        self.drop_down_list.addItems(formats)
+        
     
-    def convert_files(self, input_file, output_file, target_format):
+    def convert_files(self):
         self.main_window.statusBar().showMessage("Convert files clicked")
         
-        ext_format = os.path.splitext(input_file)[1].lower()
+        input_file = self.current_file
+        target_format = self.drop_down_list.currentText()
+        ext_format = self.extension_format
         
         # Checking extensions of images
-        if ext_format in ['.png', '.jpg', '.jpeg'] and target_format in ['.png', '.jpg', '.jpeg']:
+        if ext_format in supported_convert_extensions_pictures and target_format in supported_convert_extensions_pictures:
+            base, _ = os.path.splitext(input_file)
+            output_file = base + target_format
             self._convert_image(input_file, output_file, target_format)
+            # self._convert_image(input_file, output_file, target_format)
         else:
             self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
             return
@@ -81,16 +190,99 @@ class ConverterTab(QWidget):
         # Inside methods to convert
     def _convert_image(self, input_file, output_file, target_format):
         img = Image.open(input_file)
-        img.save(output_file, format=target_format.upper())
+        clean_format = target_format.lstrip('.').upper()
+        img.save(output_file, format=clean_format)
     
-    def clear_all_files(self):
+    def clear_all_fields(self):
         self.main_window.statusBar().showMessage("Clear all clicked")
-        pass
+        
+        if hasattr(self, "current_file"):
+            del self.current_file
+            
+        self.format_field.setText("No file loaded")
+        
+        self.preview_label.clear()
+        self.preview_title.show()
+        self.preview_info.show()
+        
+        self.main_window.statusBar().showMessage("All field cleared")
+
     
     def show_couple_rows(self):
         self.main_window.statusBar().showMessage("Show couple rows clicked")
         pass
     
+    def show_preview_picture(self):
+        # self.main_window.statusBar().showMessage("Show preview picture started")
+        
+        if not hasattr(self, "current_file") or not self.current_file:
+            self.main_window.statusBar().showMessage("No file loaded")
+            return
+        
+        file = self.current_file
+        
+        if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+            pixmap = QPixmap(file)
+            if pixmap.isNull():
+                self.main_window.statusBar().showMessage("Failed to load image")
+                return
+            
+            self.preview_title.hide()
+            self.preview_info.hide()
+            
+            self.preview_label.setPixmap(pixmap)
+            self.main_window.statusBar().showMessage("Successfully loaded image")
+        else:
+            self.main_window.statusBar().showMessage("File format is not supported")
+    
     def save_output(self):
         self.main_window.statusBar().showMessage("Save output clicked")
         pass
+    
+    
+    def get_output_file_format_list(self):
+        self.main_window.statusBar().showMessage("get output file format")
+        
+        # ext_format = getattr(self, "extension_format", "")
+        ext_format = self.extension_format
+        
+        if ext_format in supported_convert_extensions_pictures:
+            return supported_convert_extensions_pictures
+        else:
+            return ['1', '2', '3']
+        
+        
+            
+        
+    
+    def show_help_dialog(self):
+        self.main_window.statusBar().showMessage("Showing help dialog")
+        
+        help_dialog = QDialog()
+        help_dialog.setWindowTitle("Help - Converter for files")
+        help_dialog.resize(400, 300)
+        help_dialog.setMaximumSize(400, 300)
+        help_dialog.setMinimumSize(400, 300)
+        
+        layout = QVBoxLayout()
+        
+        help_label = QLabel(
+            "1. Press 'Upload' to upload file\n"
+            "2. File format will be automaticly.\n"
+            "3. Choose format to convert your file to.\n"
+            "4. Press 'Convert' to convert your file.\n"
+            "5. 'Clear' - to clear all fileds.\n"
+            "6. 'Show' - to preview first couple rows of converted file.\n"
+            "7. 'Save as' - to save converted file."
+        )
+        help_label.setWordWrap(True)
+        
+        close_btn = QPushButton('Close')
+        close_btn.clicked.connect(help_dialog.close)
+        
+        layout.addWidget(help_label)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        help_dialog.setLayout(layout)
+        help_dialog.exec()
+        self.main_window.statusBar().showMessage("Help tab closed")

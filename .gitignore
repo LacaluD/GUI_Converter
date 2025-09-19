@@ -53,6 +53,7 @@ test.*
 mac-vendor.db
 .venv/
 content.png
+content.jpeg
 
 # Other
 cython_debug/

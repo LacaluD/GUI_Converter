@@ -108,7 +108,7 @@ class PicturesTab(QWidget):
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", os.path.basename(self.current_img_path), "Images (*.png *.jpg *.jpeg)")
         except Exception as e:
-            self.main_window.statusBar().showMessage(str(e), 2000)
+            self.main_window.statusBar().showMessage(str(e))
 
         if not f:
             self.main_window.statusBar().showMessage("Save cancelled")
