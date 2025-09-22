@@ -1,13 +1,25 @@
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog
+from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
+                            QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog)
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
+from .format_converter import convert_json_csv, convert_csv_json, convert_csv_txt, convert_json_txt
+
 import os
 from PIL import Image
+from docx import Document
+import time
 
-supported_convert_extensions_pictures = ['.png', '.jpg', '.jpeg']
-supported_convert_extensions_files = ['.txt', '.docx', '.json', '.csv']
+supported_convert_extensions_pictures = ['.png', '.jpg', '.jpeg', '.webp']
+supported_convert_extensions_files = ['.txt', '.json', '.csv']  # except docx
 supported_convert_extensions_videos = ['.mp3', '.mp4', '.wav']
+
+PIC_EXTENSION_MAP = {
+    "JPG": "JPEG",
+    "JPEG": "JPEG",
+    "PNG": "PNG",
+    "WEBP": "WEBP"
+}
 
 
 class ConverterTab(QWidget):
@@ -15,7 +27,7 @@ class ConverterTab(QWidget):
         super().__init__()
         self.main_window = main_window  # ссылка на главное окно
         
-        self.extension_format = " "
+        self.extension_format = [None]
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -29,7 +41,7 @@ class ConverterTab(QWidget):
         self.convert_btn.setFixedSize(100, 40)
         self.convert_btn.clicked.connect(self.convert_files)
         
-        self.clear_btn = QPushButton("Clear")
+        self.clear_btn = QPushButton("Reset")
         self.clear_btn.setFixedSize(100, 40)
         self.clear_btn.clicked.connect(self.clear_all_fields)
         
@@ -89,7 +101,8 @@ class ConverterTab(QWidget):
         self.drop_down_list = QComboBox()
         formats = self.get_output_file_format_list()
         self.drop_down_list.clear()
-        self.drop_down_list.addItems(formats)  # Фйнкция с проверкой формата инпут файла
+        self.drop_down_list.addItems(formats)  # Список  Format To Convert
+        print(self.get_combobox_list_elems())
         self.drop_down_list.setFixedSize(100, 30)
         row_layout.addWidget(self.drop_down_list)
 
@@ -129,7 +142,7 @@ class ConverterTab(QWidget):
         self.setLayout(self.layout)
         
         
-    
+    # Automaticly get extension format
     def get_extension_format(self, inpt_f):
         self.main_window.statusBar().showMessage("get ext format func started")
         
@@ -139,6 +152,7 @@ class ConverterTab(QWidget):
                 ext = "no extension"
             self.extension_format = ext
             self.format_field.setText(ext)
+            print(self.extension_format)
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
             return ext
@@ -147,14 +161,14 @@ class ConverterTab(QWidget):
         
         self.main_window.statusBar().showMessage("Successfully got format")
 
-        
+    # Upload button logic
     def upload_inpt_file(self):
         self.main_window.statusBar().showMessage("Upload file clicked")
         
         try:
-            file, _ = QFileDialog.getOpenFileName(self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.json *.csv *.wav)")
+            file, _ = QFileDialog.getOpenFileName(self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)")
         except Exception as e:
-            print(e)
+            self.main_window.statusBar().showMessage(str(e))
             
         if not file:
             self.main_window.statusBar().showMessage("File is not choosen")
@@ -167,32 +181,88 @@ class ConverterTab(QWidget):
         self.drop_down_list.clear()
         self.drop_down_list.addItems(formats)
         
-    
+   
     def convert_files(self):
         self.main_window.statusBar().showMessage("Convert files clicked")
         
         input_file = self.current_file
-        target_format = self.drop_down_list.currentText()
-        ext_format = self.extension_format
+        target_format = self.drop_down_list.currentText().lower()
+        ext_format = self.extension_format.lower()
+        
+        base, _ = os.path.splitext(input_file)
+        output_file = f"{base}_test.{target_format}"
         
         # Checking extensions of images
-        if ext_format in supported_convert_extensions_pictures and target_format in supported_convert_extensions_pictures:
-            base, _ = os.path.splitext(input_file)
-            output_file = base + target_format
-            self._convert_image(input_file, output_file, target_format)
-            # self._convert_image(input_file, output_file, target_format)
-        else:
-            self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
+        try:
+            if ext_format in supported_convert_extensions_pictures and target_format in supported_convert_extensions_pictures:
+                self._convert_image(input_file, output_file, target_format)
+                print("Got to the _convert image block")
+                
+            elif ext_format in supported_convert_extensions_files and target_format in supported_convert_extensions_files:
+                self._convert_files(input_file, output_file, target_format)
+                print("got to the _convert files block")
+                
+            else:
+                self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
+                return
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error: {str(e)}")
             return
         
         self.main_window.statusBar().showMessage("Successfully converted")
         
-        # Inside methods to convert
+    # Converting logic for files
     def _convert_image(self, input_file, output_file, target_format):
-        img = Image.open(input_file)
-        clean_format = target_format.lstrip('.').upper()
-        img.save(output_file, format=clean_format)
-    
+        try:
+            img = Image.open(input_file)
+            clean_format = target_format.lstrip('.').upper()
+            real_format = PIC_EXTENSION_MAP.get(clean_format)
+
+            if not real_format:
+                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
+            
+            img.save(output_file, format=real_format)
+            self.main_window.statusBar().showMessage(f"Saved as {real_format}")
+
+        except Exception as e:
+            return self.main_window.statusBar().showMessage(str(e))
+        
+        
+    def _convert_files(self, inp_file, out_file, outpt_format):
+        self.main_window.statusBar().showMessage("Convert files initialized")
+        print("Convert files initialized")
+
+        file_ext = self.extension_format.lower().lstrip('.')
+        out_file_ext = outpt_format.lower().lstrip('.')
+        print(file_ext, out_file_ext)
+
+        sce_files = [f.lower().lstrip('.') for f in supported_convert_extensions_files]
+        print(sce_files)
+        # sce_files = ['.' + f for f in supported_convert_extensions_files]
+
+        if file_ext == "txt":
+            self.main_window.statusBar().showMessage("Can not convert from txt file")
+            self.extension_format = []
+            return self.extension_format
+        
+        if file_ext in sce_files:
+            if file_ext == "csv" and out_file_ext == "json":
+                print("Got func call csv to json")
+                convert_csv_json(inp=inp_file, out=out_file)
+            elif file_ext == "json" and out_file_ext == "csv":
+                convert_json_csv(inp=inp_file, out=out_file)
+            elif file_ext == "csv" and out_file_ext == "txt":
+                print("Got func call csv to txt")
+                convert_csv_txt(inp=inp_file, out=out_file)
+            elif file_ext == "json" and out_file_ext == "txt":
+                convert_json_txt(inp=inp_file, out=out_file)
+            
+        else:
+            self.main_window.statusBar().showMessage(f"Formats are unsupported")
+            print("Got to the end, but errors happened in if/else block")
+
+
+    # Clear button logic
     def clear_all_fields(self):
         self.main_window.statusBar().showMessage("Clear all clicked")
         
@@ -204,24 +274,24 @@ class ConverterTab(QWidget):
         self.preview_label.clear()
         self.preview_title.show()
         self.preview_info.show()
+        self.drop_down_list.clear()
         
         self.main_window.statusBar().showMessage("All field cleared")
 
-    
+    # Show button logic for text files
     def show_couple_rows(self):
         self.main_window.statusBar().showMessage("Show couple rows clicked")
         pass
     
+    # Show button logic for pictures files
     def show_preview_picture(self):
-        # self.main_window.statusBar().showMessage("Show preview picture started")
-        
         if not hasattr(self, "current_file") or not self.current_file:
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
         file = self.current_file
         
-        if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+        if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
             pixmap = QPixmap(file)
             if pixmap.isNull():
                 self.main_window.statusBar().showMessage("Failed to load image")
@@ -235,26 +305,34 @@ class ConverterTab(QWidget):
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
     
+    # Save as button logic
     def save_output(self):
         self.main_window.statusBar().showMessage("Save output clicked")
         pass
     
-    
+    # Get output list info for QComboBox
     def get_output_file_format_list(self):
         self.main_window.statusBar().showMessage("get output file format")
         
-        # ext_format = getattr(self, "extension_format", "")
         ext_format = self.extension_format
         
+        sce_pictures_copy = supported_convert_extensions_pictures.copy()
+        sce_files_copy = supported_convert_extensions_files.copy()
+        sce_videos_copy = supported_convert_extensions_videos.copy()
+        
         if ext_format in supported_convert_extensions_pictures:
-            return supported_convert_extensions_pictures
+            sce_pictures_copy.remove(ext_format)
+            return sce_pictures_copy
+        elif ext_format in supported_convert_extensions_files:
+            sce_files_copy.remove(ext_format)
+            return sce_files_copy
+        elif ext_format in supported_convert_extensions_videos:
+            sce_videos_copy.remove(ext_format)
+            return sce_videos_copy
         else:
-            return ['1', '2', '3']
+            return self.extension_format
         
-        
-            
-        
-    
+    # Help button info
     def show_help_dialog(self):
         self.main_window.statusBar().showMessage("Showing help dialog")
         
@@ -286,3 +364,8 @@ class ConverterTab(QWidget):
         help_dialog.setLayout(layout)
         help_dialog.exec()
         self.main_window.statusBar().showMessage("Help tab closed")
+        
+
+    def get_combobox_list_elems(self):
+        items = [self.drop_down_list.itemText(i) for i in range(self.drop_down_list.count())]
+        return items

@@ -30,6 +30,7 @@ develop-eggs/
 
 # Logs
 *.log
+logs/
 
 # Project-specific
 TODO.md
@@ -41,19 +42,11 @@ test_logs/
 configs/
 TEMP/
 Garbage/
-logs/
-Dep_Check_full.py.py
-file_monitor.log
 How should be.md
 full_vers.py
-test_cpu_block.py
-test_network_block.py
-test_disk_block.py
-test.*
-mac-vendor.db
+*test*.*
 .venv/
-content.png
-content.jpeg
+content.*
 
 # Other
 cython_debug/
