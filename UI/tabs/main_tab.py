@@ -3,16 +3,15 @@ from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLay
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
-from .format_converter import convert_json_csv, convert_csv_json, convert_csv_txt, convert_json_txt
+from .format_converter import convert_json_csv, convert_csv_json, convert_csv_txt, convert_json_txt, convert_audio_formats
 
 import os
 from PIL import Image
-from docx import Document
-import time
 
 supported_convert_extensions_pictures = ['.png', '.jpg', '.jpeg', '.webp']
 supported_convert_extensions_files = ['.txt', '.json', '.csv']  # except docx
-supported_convert_extensions_videos = ['.mp3', '.mp4', '.wav']
+supported_convert_extensions_video_audio = ['.mp3', '.mp4', '.wav']
+# supported_convert_extensions_audio = []
 
 PIC_EXTENSION_MAP = {
     "JPG": "JPEG",
@@ -109,8 +108,6 @@ class ConverterTab(QWidget):
         frame_layout.addLayout(row_layout)
         frame.setLayout(frame_layout)
         
-        
-        
         # Createing preview window
         pre_show_window_frame = QFrame()
         pre_show_window_frame.setFrameShape(QFrame.Shape.Box)
@@ -190,7 +187,7 @@ class ConverterTab(QWidget):
         ext_format = self.extension_format.lower()
         
         base, _ = os.path.splitext(input_file)
-        output_file = f"{base}_test.{target_format}"
+        output_file = f"{base}_test{target_format}"
         
         # Checking extensions of images
         try:
@@ -201,6 +198,11 @@ class ConverterTab(QWidget):
             elif ext_format in supported_convert_extensions_files and target_format in supported_convert_extensions_files:
                 self._convert_files(input_file, output_file, target_format)
                 print("got to the _convert files block")
+                
+            elif ext_format in supported_convert_extensions_video_audio and target_format in supported_convert_extensions_video_audio:
+                print("MSG before going to donc audio-video func")
+                self._convert_audio_video(input_file, output_file, target_format)
+                print("Got to the _convert audio/video block")
                 
             else:
                 self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
@@ -260,7 +262,28 @@ class ConverterTab(QWidget):
         else:
             self.main_window.statusBar().showMessage(f"Formats are unsupported")
             print("Got to the end, but errors happened in if/else block")
+            
+    def _convert_audio_video(self, inp_file, out_file, outpt_format):
+        print("_conv audio_video started")
+        
+        sce_audio_video = supported_convert_extensions_video_audio.copy()
+        
+        # sce_audio_video.remove('.mp4')
+        
+        file_ext = self.extension_format.lower()
+        out_file_ext = outpt_format.lower()
+        # out_file_ext = outpt_format.lower().lstrip('.')
+        
+        # sce_files = ['.' + f for f in supported_convert_extensions_files]
+        # sce_files = [f.lower().lstrip('.') for f in supported_convert_extensions_files]
+                
+        if file_ext in sce_audio_video and out_file_ext in sce_audio_video:
+            convert_audio_formats(inp=inp_file, out=out_file)
 
+        # print(f"file_ext: {file_ext}, out_file_ext: {out_file_ext}, out_file_f: {out_file}")
+        self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
+        
+    
 
     # Clear button logic
     def clear_all_fields(self):
@@ -318,7 +341,7 @@ class ConverterTab(QWidget):
         
         sce_pictures_copy = supported_convert_extensions_pictures.copy()
         sce_files_copy = supported_convert_extensions_files.copy()
-        sce_videos_copy = supported_convert_extensions_videos.copy()
+        sce_videos_copy = supported_convert_extensions_video_audio.copy()
         
         if ext_format in supported_convert_extensions_pictures:
             sce_pictures_copy.remove(ext_format)
@@ -326,7 +349,7 @@ class ConverterTab(QWidget):
         elif ext_format in supported_convert_extensions_files:
             sce_files_copy.remove(ext_format)
             return sce_files_copy
-        elif ext_format in supported_convert_extensions_videos:
+        elif ext_format in supported_convert_extensions_video_audio:
             sce_videos_copy.remove(ext_format)
             return sce_videos_copy
         else:
