@@ -174,12 +174,16 @@ class ConverterTab(QWidget):
     def convert_files(self):
         self.main_window.statusBar().showMessage("Convert files clicked")
         
-        input_file = self.current_file
-        target_format = self.drop_down_list.currentText().lower()
-        ext_format = self.extension_format.lower()
-        
-        base, _ = os.path.splitext(input_file)
-        output_file = f"{base}_test{target_format}"
+        try:
+            input_file = self.current_file
+            target_format = self.drop_down_list.currentText().lower()
+            ext_format = self.extension_format.lower()
+            
+            base, _ = os.path.splitext(input_file)
+            output_file = f"{base}_test{target_format}"
+        except Exception:
+            self.main_window.statusBar().showMessage("Error: There is no file to convert")
+            return
         
         # Checking extensions of images
         try:
@@ -273,12 +277,28 @@ class ConverterTab(QWidget):
     def clear_all_fields(self):
         self.main_window.statusBar().showMessage("Clear all clicked")
         
-        if hasattr(self, "current_file"):
-            del self.current_file
+        # if hasattr(self, "current_file"):
+        #     del self.current_file
             
-        self.format_field.setText("No file loaded")
+        # self.format_field.setText("No file loaded")
         
-        self.preview_label.clear()
+        # self.preview_label.clear()
+        
+        try:
+            if hasattr(self, "current_file"):
+                del self.current_file
+                self.format_field.setText("No file loaded")
+                self.preview_label.clear()
+                
+            elif self.previewer.text_file_prev:
+                self.previewer.text_file_prev.clear()
+                self.previewer.text_file_prev.setVisible(False)
+            else:
+                self.main_window.statusBar().showMessage("Nothing to clear")
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+            return
+        
         self.preview_title.show()
         self.preview_info.show()
         self.drop_down_list.clear()
@@ -297,7 +317,8 @@ class ConverterTab(QWidget):
                         prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
             print("Got to the previes file")
         elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-            # self.previewer.preview_videos()
+            self.previewer.video_preview(prev_title=self.preview_title, prev_info=self.preview_info, 
+                        prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
             print("Got to the preview video/audio")
         else:
             print("Unsupported file format")

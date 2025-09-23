@@ -2,11 +2,12 @@ import csv
 import json
 import subprocess
 from pathlib import Path
+from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QPlainTextEdit
+from PyQt6.QtWidgets import QPlainTextEdit, QPushButton
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtMultimediaWidgets import QVideoWidget
 from pathlib import Path
-
-from .constants import SUPPORTED_CONVERT_EXTENSIONS_FILES
 
 class Converter():
     def __init__(self, main_window):
@@ -110,12 +111,11 @@ class Previewer:
         self.main_window = main_window
         
     def preview_file(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
-        print(prev_title, prev_info, prev_label, curr_file, final_file)
+        # print(prev_title, prev_info, prev_label, curr_file, final_file)
         file = curr_file
         
         if not file or not Path(file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
-            print("Here2")
             return
         
         if file:
@@ -125,14 +125,10 @@ class Previewer:
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
                 return
-        print("Here 3")
         
         try:
-            text_file_prev = QPlainTextEdit(prev_label.parent())
-            text_file_prev.setReadOnly(True)
-            # text_file_prev.setGeometry(prev_label.geometry())
-            text_file_prev.setStyleSheet("background-color: white;")
-            print("Here 4")
+            self.text_file_prev = QPlainTextEdit(prev_label.parent())
+            self.text_file_prev.setReadOnly(True)
             
             try:
                 parent_layout = prev_label.parent().layout()
@@ -141,14 +137,11 @@ class Previewer:
                 prev_info.hide()
                 prev_label.hide()
                 
-                prev_label.setStyleSheet("background-color: white;")
-                
-                text_file_prev.show()
-                text_file_prev.setPlainText(content)
-                parent_layout.addWidget(text_file_prev)
+                self.text_file_prev.show()
+                self.text_file_prev.setPlainText(content)
+                parent_layout.addWidget(self.text_file_prev)
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Error: {str(e)}")
-                print("Here 5")
                 
         except Exception as e:
             self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
@@ -178,7 +171,55 @@ class Previewer:
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
         
+
+    def video_preview(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
+        file = curr_file
         
+        if not file or not Path(file).exists():
+            self.main_window.statusBar().showMessage("No file loaded")
+            return
+        
+        if file.lower().endswith('.mp4'):
+            try:
+                video_preview_widget = QVideoWidget(prev_label.parent())
+                
+                play_btn = QPushButton('Play ')
+                play_btn.clicked.connect(self.play_vid)
+                
+                pause_btn = QPushButton('Pause ')
+                pause_btn.clicked.connect(self.pause_vid)
+                
+                try:
+                    # parent_layout = prev_label.parent().layout()
+                    
+                    prev_title.hide()
+                    prev_info.hide()
+                    prev_label.hide()
+                    
+                    self.player = QMediaPlayer()
+                    audio_output = QAudioOutput()
+                    self.player.setAudioOutput(audio_output)
+                    self.player.setVideoOutput(video_preview_widget)
+                    
+                    if curr_file and not final_file:
+                        self.player.setSource(QUrl.fromLocalFile(curr_file))
+                    elif not curr_file and final_file:
+                        self.player.setSource(QUrl.fromLocalFile(final_file))
+                    else:
+                        self.main_window.statusBar().showMessage("No file loaded")
+                except Exception as e:
+                    self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+            except Exception as e:
+                self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+        
+        else:
+            self.main_window.statusBar().showMessage("Unexpected error during loading video")
+        
+    def play_vid(self):
+        self.player.play()
+    
+    def pause_vid(self):
+        self.player.pause()
         
 
 # convert_json_txt(inp=inp, out='test1.txt')

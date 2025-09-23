@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
     # Updating page status
     def on_tab_changed(self, index, tabs, status_bar):
         tab_name = tabs.tabText(index)
-        status_bar.showMessage(f"Switched to: '{tab_name}' ")
+        status_bar.showMessage(f"Switched to: '{tab_name}' tab")
 
 # Initializing App
 app = QApplication([])
