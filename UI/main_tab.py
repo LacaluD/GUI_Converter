@@ -1,30 +1,21 @@
 from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
                             QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog)
-from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
-from .format_converter import convert_json_csv, convert_csv_json, convert_csv_txt, convert_json_txt, convert_audio_formats
+from .format_converter_previewer import Converter, Previewer
+from .constants import *
 
 import os
 from PIL import Image
-
-supported_convert_extensions_pictures = ['.png', '.jpg', '.jpeg', '.webp']
-supported_convert_extensions_files = ['.txt', '.json', '.csv']  # except docx
-supported_convert_extensions_video_audio = ['.mp3', '.mp4', '.wav']
-# supported_convert_extensions_audio = []
-
-PIC_EXTENSION_MAP = {
-    "JPG": "JPEG",
-    "JPEG": "JPEG",
-    "PNG": "PNG",
-    "WEBP": "WEBP"
-}
 
 
 class ConverterTab(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window  # ссылка на главное окно
+        
+        self.converter = Converter(self.main_window)
+        self.previewer = Previewer(self.main_window)
         
         self.extension_format = [None]
         
@@ -44,9 +35,10 @@ class ConverterTab(QWidget):
         self.clear_btn.setFixedSize(100, 40)
         self.clear_btn.clicked.connect(self.clear_all_fields)
         
-        self.show_first_str_btn = QPushButton("Show")
-        self.show_first_str_btn.setFixedSize(100, 40)
-        self.show_first_str_btn.clicked.connect(self.show_preview_picture)
+        self.show_btn = QPushButton("Show")
+        self.show_btn.setFixedSize(100, 40)
+        # self.show_btn.clicked.connect(self.show_preview_picture)
+        self.show_btn.clicked.connect(self.preview_object)
         
         self.save_converted_btn = QPushButton("Save as")
         self.save_converted_btn.setFixedSize(100, 40)
@@ -66,7 +58,7 @@ class ConverterTab(QWidget):
         buttons_layout.addSpacing(10)
         buttons_layout.addWidget(self.clear_btn)
         buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.show_first_str_btn)
+        buttons_layout.addWidget(self.show_btn)
         buttons_layout.addSpacing(10)
         buttons_layout.addWidget(self.save_converted_btn)
         buttons_layout.addSpacing(10)
@@ -109,11 +101,11 @@ class ConverterTab(QWidget):
         frame.setLayout(frame_layout)
         
         # Createing preview window
-        pre_show_window_frame = QFrame()
-        pre_show_window_frame.setFrameShape(QFrame.Shape.Box)
-        pre_show_window_frame.setFrameShadow(QFrame.Shadow.Sunken)
-        pre_show_window_frame.setLineWidth(2)
-        pre_show_window_frame.setStyleSheet("background-color: lightgray;")
+        self.pre_show_window_frame = QFrame()
+        self.pre_show_window_frame.setFrameShape(QFrame.Shape.Box)
+        self.pre_show_window_frame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.pre_show_window_frame.setLineWidth(2)
+        self.pre_show_window_frame.setStyleSheet("background-color: lightgray;")
         
         pre_show_window_frame_layout = QVBoxLayout()
         
@@ -129,13 +121,13 @@ class ConverterTab(QWidget):
         self.preview_label.setScaledContents(True)
         pre_show_window_frame_layout.addWidget(self.preview_label)
         
-        pre_show_window_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        pre_show_window_frame.setLayout(pre_show_window_frame_layout)
+        self.pre_show_window_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.pre_show_window_frame.setLayout(pre_show_window_frame_layout)
         
         
         self.layout.addLayout(buttons_layout)
         self.layout.addWidget(frame, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(pre_show_window_frame)
+        self.layout.addWidget(self.pre_show_window_frame)
         self.setLayout(self.layout)
         
         
@@ -191,18 +183,17 @@ class ConverterTab(QWidget):
         
         # Checking extensions of images
         try:
-            if ext_format in supported_convert_extensions_pictures and target_format in supported_convert_extensions_pictures:
+            if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 self._convert_image(input_file, output_file, target_format)
-                print("Got to the _convert image block")
+                # print("Got to the _convert image block")
                 
-            elif ext_format in supported_convert_extensions_files and target_format in supported_convert_extensions_files:
+            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 self._convert_files(input_file, output_file, target_format)
-                print("got to the _convert files block")
+                # print("got to the _convert files block")
                 
-            elif ext_format in supported_convert_extensions_video_audio and target_format in supported_convert_extensions_video_audio:
-                print("MSG before going to donc audio-video func")
+            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
                 self._convert_audio_video(input_file, output_file, target_format)
-                print("Got to the _convert audio/video block")
+                # print("Got to the _convert audio/video block")
                 
             else:
                 self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
@@ -232,58 +223,51 @@ class ConverterTab(QWidget):
         
     def _convert_files(self, inp_file, out_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
-        print("Convert files initialized")
+        # print("Convert files initialized")
 
         file_ext = self.extension_format.lower().lstrip('.')
         out_file_ext = outpt_format.lower().lstrip('.')
-        print(file_ext, out_file_ext)
+        # print(file_ext, out_file_ext)
 
-        sce_files = [f.lower().lstrip('.') for f in supported_convert_extensions_files]
+        sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
         print(sce_files)
         # sce_files = ['.' + f for f in supported_convert_extensions_files]
 
-        if file_ext == "txt":
+        if file_ext == ".txt":
             self.main_window.statusBar().showMessage("Can not convert from txt file")
-            self.extension_format = []
-            return self.extension_format
+            return []
+        
         
         if file_ext in sce_files:
             if file_ext == "csv" and out_file_ext == "json":
-                print("Got func call csv to json")
-                convert_csv_json(inp=inp_file, out=out_file)
+                # print("Got func call csv to json")
+                self.converter.convert_csv_json(inp=inp_file, out=out_file)
             elif file_ext == "json" and out_file_ext == "csv":
-                convert_json_csv(inp=inp_file, out=out_file)
+                self.converter.convert_json_csv(inp=inp_file, out=out_file)
             elif file_ext == "csv" and out_file_ext == "txt":
-                print("Got func call csv to txt")
-                convert_csv_txt(inp=inp_file, out=out_file)
+                # print("Got func call csv to txt")
+                self.converter.convert_csv_txt(inp=inp_file, out=out_file)
             elif file_ext == "json" and out_file_ext == "txt":
-                convert_json_txt(inp=inp_file, out=out_file)
-            
+                self.converter.convert_json_txt(inp=inp_file, out=out_file)
         else:
             self.main_window.statusBar().showMessage(f"Formats are unsupported")
             print("Got to the end, but errors happened in if/else block")
             
     def _convert_audio_video(self, inp_file, out_file, outpt_format):
-        print("_conv audio_video started")
+        # print("_conv audio_video started")
         
-        sce_audio_video = supported_convert_extensions_video_audio.copy()
-        
-        # sce_audio_video.remove('.mp4')
+        sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
         
         file_ext = self.extension_format.lower()
         out_file_ext = outpt_format.lower()
         # out_file_ext = outpt_format.lower().lstrip('.')
-        
-        # sce_files = ['.' + f for f in supported_convert_extensions_files]
-        # sce_files = [f.lower().lstrip('.') for f in supported_convert_extensions_files]
                 
         if file_ext in sce_audio_video and out_file_ext in sce_audio_video:
-            convert_audio_formats(inp=inp_file, out=out_file)
+            self.converter.convert_audio_formats(inp=inp_file, out=out_file)
 
         # print(f"file_ext: {file_ext}, out_file_ext: {out_file_ext}, out_file_f: {out_file}")
         self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
-        
-    
+
 
     # Clear button logic
     def clear_all_fields(self):
@@ -301,32 +285,33 @@ class ConverterTab(QWidget):
         
         self.main_window.statusBar().showMessage("All field cleared")
 
+    def preview_object(self):
+        file_ext = self.extension_format
+        # print(file, file_ext)
+        
+        if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+            self.previewer.show_preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
+                                                prev_label=self.preview_label, curr_file=self.current_file)
+        elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+            self.previewer.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
+                        prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+            print("Got to the previes file")
+        elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+            # self.previewer.preview_videos()
+            print("Got to the preview video/audio")
+        else:
+            print("Unsupported file format")
+            self.main_window.statusBar().showMessage("Unsupported file format")
+    
     # Show button logic for text files
     def show_couple_rows(self):
         self.main_window.statusBar().showMessage("Show couple rows clicked")
+        
+        print(self.extension_format)
+        print(self.extension_format)
+        print(self.extension_format)
+        
         pass
-    
-    # Show button logic for pictures files
-    def show_preview_picture(self):
-        if not hasattr(self, "current_file") or not self.current_file:
-            self.main_window.statusBar().showMessage("No file loaded")
-            return
-        
-        file = self.current_file
-        
-        if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            pixmap = QPixmap(file)
-            if pixmap.isNull():
-                self.main_window.statusBar().showMessage("Failed to load image")
-                return
-            
-            self.preview_title.hide()
-            self.preview_info.hide()
-            
-            self.preview_label.setPixmap(pixmap)
-            self.main_window.statusBar().showMessage("Successfully loaded image")
-        else:
-            self.main_window.statusBar().showMessage("File format is not supported")
     
     # Save as button logic
     def save_output(self):
@@ -338,20 +323,23 @@ class ConverterTab(QWidget):
         self.main_window.statusBar().showMessage("get output file format")
         
         ext_format = self.extension_format
+        # print(ext_format)
         
-        sce_pictures_copy = supported_convert_extensions_pictures.copy()
-        sce_files_copy = supported_convert_extensions_files.copy()
-        sce_videos_copy = supported_convert_extensions_video_audio.copy()
+        sce_pictures_copy = SUPPORTED_CONVERT_EXTENSIONS_PICTURES.copy()
+        sce_files_copy = SUPPORTED_CONVERT_EXTENSIONS_FILES.copy()
+        sce_videos_copy = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
         
-        if ext_format in supported_convert_extensions_pictures:
+        if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
             sce_pictures_copy.remove(ext_format)
             return sce_pictures_copy
-        elif ext_format in supported_convert_extensions_files:
+        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and ext_format != '.txt':
             sce_files_copy.remove(ext_format)
             return sce_files_copy
-        elif ext_format in supported_convert_extensions_video_audio:
+        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
             sce_videos_copy.remove(ext_format)
             return sce_videos_copy
+        elif ext_format == '.txt':
+            return []
         else:
             return self.extension_format
         
@@ -369,7 +357,7 @@ class ConverterTab(QWidget):
         
         help_label = QLabel(
             "1. Press 'Upload' to upload file\n"
-            "2. File format will be automaticly.\n"
+            "2. File format will be set automaticly.\n"
             "3. Choose format to convert your file to.\n"
             "4. Press 'Convert' to convert your file.\n"
             "5. 'Clear' - to clear all fileds.\n"
@@ -388,7 +376,7 @@ class ConverterTab(QWidget):
         help_dialog.exec()
         self.main_window.statusBar().showMessage("Help tab closed")
         
-
+    # Func for debuging drop_down_list
     def get_combobox_list_elems(self):
         items = [self.drop_down_list.itemText(i) for i in range(self.drop_down_list.count())]
         return items

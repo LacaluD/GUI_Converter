@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QTabWidget, QVB
 from PyQt6.QtCore import QSize
 import sys
 
-from UI.tabs.main_tab import ConverterTab
+from UI.main_tab import ConverterTab
 
 
 class MainWindow(QMainWindow):
