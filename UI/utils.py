@@ -2,9 +2,9 @@ import csv
 import json
 import subprocess
 from pathlib import Path
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QPlainTextEdit, QPushButton
+from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from pathlib import Path
@@ -15,19 +15,16 @@ class Converter():
         
     # from csv to txt
     def convert_csv_txt(self, inp, out):
-        # print("Started converting csv to txt")
         with open(inp, newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             with open(out, 'w', encoding='utf-8') as out_file:
                 out_file.write('\t'.join(reader.fieldnames) + '\n')
                 for row in reader:
                     out_file.write('\t'.join(row.values()) + '\n')
-            # print("finised convert csv to txt")
             self.main_window.statusBar().showMessage("Finished converting csv to txt")
 
     # from json to txt
     def convert_json_txt(self, inp, out):
-        # print("Started converting json to txt")
         with open(inp, 'r', encoding='utf-8') as file:
             reader = json.load(file)
             with open(out, 'w', encoding='utf-8') as out_file:
@@ -44,25 +41,21 @@ class Converter():
                         out_file.write(f"{k}: {v}\n")
                 else:
                     out_file.write(str(reader))
-        print("finished convert json to txt")
         self.main_window.statusBar().showMessage("Finished converting json to txt")
                     
     # from csv to json
     def convert_csv_json(self, inp, out):
         self.main_window.statusBar().showMessage("Started converting csv to json")
-        # print("Started converting csv to json")
         with open(inp, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             data = list(reader)
             
         with open(out, 'w', encoding='utf-8') as jsonfile:
             json.dump(data, jsonfile, ensure_ascii=False, indent=4)
-            # print("Finished to jsonfile")
             self.main_window.statusBar().showMessage("Finished converting csv to json")
             
     # from json to csv
     def convert_json_csv(self, inp, out):
-        # print("Started converting json to csv")
         with open(inp, 'r', encoding='utf-8') as in_file:
             data = json.load(in_file)
             
@@ -80,12 +73,9 @@ class Converter():
 
     # convert audio and video
     def convert_audio_formats(self, inp, out):
-        # print("Convert audio formats started")
-        
         inp_full_path = Path(inp)
         out_full_path = Path(out)
         ext_out = out_full_path.suffix.lower().lstrip('.')
-        # print(f"Full path for cnvert_audio formats {ext_out}")
         
         if not inp_full_path.exists():
             raise FileNotFoundError(f"Input file is not found: {inp}")
@@ -109,9 +99,9 @@ class Converter():
 class Previewer:
     def __init__(self, main_window):
         self.main_window = main_window
+        self.player = QMediaPlayer()
         
     def preview_file(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
-        # print(prev_title, prev_info, prev_label, curr_file, final_file)
         file = curr_file
         
         if not file or not Path(file).exists():
@@ -149,8 +139,8 @@ class Previewer:
         
         self.main_window.statusBar().showMessage("Successfully loaded file content")
         
-        # Show button logic for pictures files
-    def show_preview_picture(self, prev_title, prev_info, prev_label, curr_file):
+    # Preview Pictures
+    def preview_picture(self, prev_title, prev_info, prev_label, curr_file):
         file = curr_file
         
         if not file or not Path(file).exists():
@@ -171,61 +161,145 @@ class Previewer:
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
         
-
-    def video_preview(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
-        file = curr_file
+    # Preview video
+    def preview_video(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
+        current_source = self.player.source().toLocalFile() if self.player.source() else None
         
-        if not file or not Path(file).exists():
+        # Check if file exists
+        if not curr_file or not Path(curr_file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        if file.lower().endswith('.mp4'):
+        # Check if file is already loaded
+        if current_source == (curr_file or final_file):
+            self.main_window.statusBar().showMessage("Video Previwer already exist")
+            return
+        
+        if curr_file.lower().endswith(('.mp4', '.mp3', '.wav')):
             try:
-                video_preview_widget = QVideoWidget(prev_label.parent())
+                self.video_preview_widget = QVideoWidget(prev_label.parent())
                 
-                play_btn = QPushButton('Play ')
-                play_btn.clicked.connect(self.play_vid)
+                # Creating Buttons
+                self.play_btn = QPushButton('Play ')
+                self.play_btn.clicked.connect(self.play_vid)
+                self.pause_btn = QPushButton('Pause ')
+                self.pause_btn.clicked.connect(self.pause_vid)
                 
-                pause_btn = QPushButton('Pause ')
-                pause_btn.clicked.connect(self.pause_vid)
+                # Creating labels to show current and total video time 
+                self.current_vid_time = QLabel('00:00')
+                self.total_vid_time = QLabel('00:00')
+                
+                # Creating main layout for all widgets in video player
+                vid_prev_buttons_layout = QHBoxLayout()
                 
                 try:
-                    # parent_layout = prev_label.parent().layout()
+                    # Getting the parent layout widget
+                    parent_layout = prev_label.parent().layout()
                     
+                    # Hiding previous titles
                     prev_title.hide()
                     prev_info.hide()
                     prev_label.hide()
                     
-                    self.player = QMediaPlayer()
-                    audio_output = QAudioOutput()
-                    self.player.setAudioOutput(audio_output)
-                    self.player.setVideoOutput(video_preview_widget)
+                    # Setting up the Audio output
+                    self.audio_output = QAudioOutput()
+                    self.player.setAudioOutput(self.audio_output)
+                    self.player.setVideoOutput(self.video_preview_widget)
                     
+                    # Creating slider with timestamps
+                    self.video_slider = QSlider(Qt.Orientation.Horizontal)
+                    self.video_slider.setRange(0, 0)
+
+                    vid_slider_layout = QHBoxLayout()
+                    vid_slider_layout.addWidget(self.current_vid_time)
+                    vid_slider_layout.addWidget(self.video_slider, stretch=1)
+                    vid_slider_layout.addWidget(self.total_vid_time)
+                    vid_prev_buttons_layout.addLayout(vid_slider_layout)
+                    
+                    # Check the file to play
                     if curr_file and not final_file:
                         self.player.setSource(QUrl.fromLocalFile(curr_file))
                     elif not curr_file and final_file:
                         self.player.setSource(QUrl.fromLocalFile(final_file))
+                    elif curr_file and final_file:
+                        self.player.setSource(QUrl.fromLocalFile(final_file))
                     else:
                         self.main_window.statusBar().showMessage("No file loaded")
+                        
+                    # Adding play/pause buttons to main video_previewer layout
+                    parent_layout.addWidget(self.video_preview_widget)
+                    vid_prev_buttons_layout.addSpacing(5)
+                    vid_prev_buttons_layout.addWidget(self.play_btn)
+                    vid_prev_buttons_layout.addSpacing(5)
+                    vid_prev_buttons_layout.addWidget(self.pause_btn)
+                    vid_prev_buttons_layout.addSpacing(5)
+                    parent_layout.addLayout(vid_prev_buttons_layout)
+                    
+                    # Connecting slider to update timestamp funcs
+                    self.player.positionChanged.connect(self.update_slider_pos)
+                    self.player.durationChanged.connect(self.update_duration)
+                    self.video_slider.sliderMoved.connect(self.seek)
+                    
+                    self.main_window.statusBar().showMessage("Successfully loaded file")
+                    
                 except Exception as e:
                     self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+                
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Error: {str(e)}")
-        
+
         else:
             self.main_window.statusBar().showMessage("Unexpected error during loading video")
-        
+            return
+    
+    # Support methods
     def play_vid(self):
         self.player.play()
     
     def pause_vid(self):
         self.player.pause()
         
-
-# convert_json_txt(inp=inp, out='test1.txt')
-# convert_csv_txt(inp=inp, out='test2.txt')
-
-# convert_csv_json(inp=inp, out='test1.json')
-# convert_json_csv(inp=inp, out='test1.csv')
-
-# convert_media(inp=inp, out='test.wav', out_format=None)
+    def update_slider_pos(self, position):
+        self.video_slider.setValue(position)
+        self.current_vid_time.setText(self.format_time(position))
+        
+    def update_duration(self, duration):
+        self.video_slider.setRange(0, duration)
+        self.total_vid_time.setText(self.format_time(duration))
+        
+    def seek(self, position):
+        self.player.setPosition(position)
+        
+    def format_time(self, msec):
+        seconds = msec // 1000
+        minutes = seconds // 60
+        seconds = seconds  % 60
+        return f"{minutes:02d}:{seconds:02d}"
+    
+    def clear_vid_preview(self):
+        video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn, 
+                                 self.pause_btn, self.current_vid_time, self.total_vid_time]
+        try: 
+            
+            self.player.stop()
+            self.player.setVideoOutput(None)
+            self.player.setAudioOutput(None)
+            self.player.setSource(QUrl())
+            
+            try:
+                self.player.positionChanged.disconnect()
+                self.player.durationChanged.disconnect()
+            except (TypeError, RuntimeError):
+                return
+            
+            for elem in video_preview_widgets:
+                if elem:
+                    elem.setParent(None)
+                    elem.deleteLater()
+                    
+            for elem in video_preview_widgets:
+                elem = None
+                
+            self.player.disconnect()
+        except Exception:
+            return
