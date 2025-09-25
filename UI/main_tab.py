@@ -15,8 +15,12 @@ class ConverterTab(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window  # ссылка на главное окно
+        
+        # Values by default
         self.extension_format = [None]
         self.current_file = None
+        self.converted_output_image = None
+        self.converted_output_image_format = None
         
         self.converter = Converter(self.main_window)
         self.previewer = Previewer(self.main_window)
@@ -185,7 +189,7 @@ class ConverterTab(QWidget):
         # Checking extensions of images
         try:
             if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                self._convert_image(input_file, output_file, target_format)
+                self._convert_image(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 self._convert_files(input_file, output_file, target_format)
@@ -203,7 +207,7 @@ class ConverterTab(QWidget):
         self.main_window.statusBar().showMessage("Successfully converted")
         
     # Converting logic for files
-    def _convert_image(self, input_file, output_file, target_format):
+    def _convert_image(self, input_file, target_format):
         try:
             img = Image.open(input_file)
             clean_format = target_format.lstrip('.').upper()
@@ -223,13 +227,13 @@ class ConverterTab(QWidget):
             return self.main_window.statusBar().showMessage(str(e))
         
     def save_img(self):
-        if self.current_file:
-            extension = self.converted_output_image_format.lower()
-            ext_for_better_quality = extension.upper()
-            ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
-        else:
-            self.main_window.statusBar().showMessage('Upload file first')
+        if not self.converted_output_image or not self.converted_output_image_format:
+            self.main_window.statusBar().showMessage('No converted image to save')
             return
+        
+        extension = self.converted_output_image_format.lower()
+        ext_for_better_quality = extension.upper()
+        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
         
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
