@@ -283,8 +283,9 @@ class ConverterTab(QWidget):
         if self.converted_output_image_format in sce_pictures:
             self.save_img()
         
-        # elif self.converted_output_image_format in sce_files:
-        #     self.converter.get_save_filename(file_ext=self.extension_format)
+        elif self.extension_format in sce_files:
+            self.converter.save_audio_video_conv_file(self.extension_format)
+            print('here2')
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")

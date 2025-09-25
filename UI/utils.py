@@ -93,6 +93,10 @@ class Converter():
         out_full_path = Path(out)
         ext_out = out_full_path.suffix.lower().lstrip('.')
         
+        get_filename = self.save_audio_video_conv_file(f"untitled.{ext_out}")
+        if not get_filename:
+            return
+        
         if not inp_full_path.exists():
             raise FileNotFoundError(f"Input file is not found: {inp}")
         
@@ -100,7 +104,7 @@ class Converter():
             msg = f"File with {out} path already exists. Scipping"
             return msg
         
-        command = ['ffmpeg', '-y', '-i', inp, out]
+        command = ['ffmpeg', '-y', '-i', inp, get_filename]
         
         if ext_out == 'mp4':
             command += ['-c:a', 'aac']
@@ -115,6 +119,26 @@ class Converter():
     def get_save_filename(self, default_name, filters):
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", default_name, filters)
+        except Exception as e:
+            self.main_window.statusBar().showMessage(str(e))
+            return None
+                
+        if not f:
+            self.main_window.statusBar().showMessage("Save cancelled")
+            return None
+
+        return f
+    
+    def save_audio_video_conv_file(self, out):
+        ext = Path(out).suffix.lower().lstrip('.')
+        
+        if ext == "mp4":
+            filters = "Video Files (*.mp4)"
+        else:
+            filters = "Audio Files (*.mp3 *.wav)"
+        
+        try:
+            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", f"untitled.{ext}", filters)
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
             return None
