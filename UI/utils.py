@@ -159,7 +159,6 @@ class Previewer:
         self.converter = converter
         
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
-        file = curr_file
         
         try:
             self.output_file = self.converter.doc_file_path
@@ -167,23 +166,23 @@ class Previewer:
         except AttributeError:
             self.main_window.statusBar().showMessage("Converted file is not avalible")
         
-        if not file or not Path(file).exists():
+        if not curr_file or not Path(file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        if file or self.output_file:
+        if curr_file or self.output_file:
             try:
-                if file and not self.output_file:
-                    with open(file, 'r', encoding='utf-8') as file:
+                if curr_file and not self.output_file:
+                    with open(curr_file, 'r', encoding='utf-8') as file:
                         content = file.read()
-                        self.main_window.statusBar().showMessage(f"Loaded content from: {file}")
+                        self.main_window.statusBar().showMessage(f"Loaded content from: {curr_file}")
                         
-                elif not file and self.output_file:
+                elif not curr_file and self.output_file:
                     with open(self.output_file, 'r', encoding='utf-8') as file:
                         content = file.read
                         self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
                         
-                elif file and self.output_file:
+                elif curr_file and self.output_file:
                     with open(self.output_file, 'r', encoding='utf-8') as file:
                         content = file.read()
                         self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
