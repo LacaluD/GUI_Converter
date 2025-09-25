@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLay
                             QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog, QPlainTextEdit)
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 
 from .utils import Converter, Previewer
 from .constants import *
@@ -15,6 +16,7 @@ class ConverterTab(QWidget):
         super().__init__()
         self.main_window = main_window  # ссылка на главное окно
         self.extension_format = [None]
+        self.current_file = None
         
         self.converter = Converter(self.main_window)
         self.previewer = Previewer(self.main_window)
@@ -221,9 +223,13 @@ class ConverterTab(QWidget):
             return self.main_window.statusBar().showMessage(str(e))
         
     def save_img(self):
-        extension = self.converted_output_image_format.lower()
-        ext_for_better_quality = extension.upper()
-        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        if self.current_file:
+            extension = self.converted_output_image_format.lower()
+            ext_for_better_quality = extension.upper()
+            ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        else:
+            self.main_window.statusBar().showMessage('Upload file first')
+            return
         
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
@@ -287,18 +293,29 @@ class ConverterTab(QWidget):
     # Clear button logic
     def clear_all_fields(self):
         self.main_window.statusBar().showMessage("Clear all clicked")
-        if hasattr(self.previewer, 'text_file_prev') and isinstance(self.previewer.text_file_prev, QPlainTextEdit):
-            print('Here')
+        cleared = False
+        p = self.previewer
+        
+        if hasattr(p, 'text_file_prev') and isinstance(self.previewer.text_file_prev, QPlainTextEdit):
             self.reset_current_file()
             self.clear_file_prev()
+            cleared = True
             self.main_window.statusBar().showMessage("Successfully cleared")
             
-        elif hasattr(self.previewer, 'preview_video') and isinstance(self.previewer.video_preview_widget, QVideoWidget):
-            print('here 2')
-            self.previewer.clear_vid_preview()
+        elif hasattr(p, 'pixmap') and isinstance(self.previewer.pixmap, QPixmap):
             self.reset_current_file()
+            self.clear_image_prev()
+            cleared = True
             self.main_window.statusBar().showMessage("Successfully cleared")
             
+        elif hasattr(p, 'video_preview_widget') and isinstance(self.previewer.video_preview_widget, QVideoWidget):
+            self.reset_current_file()
+            self.previewer.clear_vid_preview()
+            cleared = True
+            self.main_window.statusBar().showMessage("Successfully cleared")
+            
+        if cleared:
+            self.main_window.statusBar().showMessage("Successfully cleared")
         else:
             self.main_window.statusBar().showMessage("Nothing to clear")
             return
@@ -325,21 +342,31 @@ class ConverterTab(QWidget):
         except Exception:
             return
     
+    def clear_image_prev(self):
+        try:
+            self.preview_label.setPixmap(QPixmap())
+        except Exception:
+            return
+        
     # Sorting funcs to start right func
     def preview_object(self):
         file_ext = self.extension_format
         
-        if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-            self.previewer.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
-                                                prev_label=self.preview_label, curr_file=self.current_file)
-        elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-            self.previewer.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
-                        prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
-        elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-            self.previewer.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
-                        prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+        if self.current_file:
+            if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+                self.previewer.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
+                                                    prev_label=self.preview_label, curr_file=self.current_file)
+            elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+                self.previewer.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
+                            prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+            elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+                self.previewer.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
+                            prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+            else:
+                self.main_window.statusBar().showMessage("Unsupported file format")
+                return
         else:
-            self.main_window.statusBar().showMessage("Unsupported file format")
+            self.main_window.statusBar().showMessage("Upload file first")
             return
     
     # Save as button logic

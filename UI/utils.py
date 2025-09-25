@@ -148,15 +148,15 @@ class Previewer:
             return
         
         if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            pixmap = QPixmap(file)
-            if pixmap.isNull():
+            self.pixmap = QPixmap(file)
+            if self.pixmap.isNull():
                 self.main_window.statusBar().showMessage("Failed to load image")
                 return
             
             prev_title.hide()
             prev_info.hide()
             
-            prev_label.setPixmap(pixmap)
+            prev_label.setPixmap(self.pixmap)
             self.main_window.statusBar().showMessage("Successfully loaded image")
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
