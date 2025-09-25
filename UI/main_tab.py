@@ -47,7 +47,7 @@ class ConverterTab(QWidget):
         
         self.save_converted_btn = QPushButton("Save as")
         self.save_converted_btn.setFixedSize(100, 40)
-        self.save_converted_btn.clicked.connect(self.save_img)
+        self.save_converted_btn.clicked.connect(self.save_converted_file)
         
         self.help_btn = QPushButton("Help")
         self.help_btn.setFixedSize(100, 40)
@@ -226,35 +226,7 @@ class ConverterTab(QWidget):
         except Exception as e:
             return self.main_window.statusBar().showMessage(str(e))
         
-    def save_img(self):
-        if not self.converted_output_image or not self.converted_output_image_format:
-            self.main_window.statusBar().showMessage('No converted image to save')
-            return
-        
-        extension = self.converted_output_image_format.lower()
-        ext_for_better_quality = extension.upper()
-        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
-        
-        try:
-            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
-        except Exception as e:
-                self.main_window.statusBar().showMessage(str(e))
-                return
-                
-        if not f:
-            self.main_window.statusBar().showMessage("Save cancelled")
-            return
-        
-        try:
-            if ext_for_better_quality in ('JPEG', 'JPG'):
-                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, quality=85, progressive=True)
-            elif ext_for_better_quality == 'PNG':
-                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, compress_level=8)
-            elif ext_for_better_quality == 'WEBP':
-                self.converted_output_image.save(f, format=self.converted_output_image_format, quality=85, lossless=False, method=6)
-            self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
-        except Exception as e:
-            self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
+    
         
     def _convert_files(self, inp_file, out_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
@@ -292,8 +264,23 @@ class ConverterTab(QWidget):
 
         # ['txt', 'json', 'csv'] - without .
         self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
-
-
+        
+    # Save as button logic
+    def save_converted_file(self):
+        p = self.previewer
+        sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
+        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]
+        
+        if not self.converted_output_image or not self.converted_output_image_format:
+            self.main_window.statusBar().showMessage("No converted file to save")
+            return
+        
+        if self.converted_output_image_format in sce_pictures:
+            self.save_img()
+        
+        else:
+            self.main_window.statusBar().showMessage("Error happened during saving output file")
+        
     # Clear button logic
     def clear_all_fields(self):
         self.main_window.statusBar().showMessage("Clear all clicked")
@@ -373,10 +360,31 @@ class ConverterTab(QWidget):
             self.main_window.statusBar().showMessage("Upload file first")
             return
     
-    # Save as button logic
-    def save_output(self):
-        self.main_window.statusBar().showMessage("Save output clicked")
-        pass
+    def save_img(self): #############################################################
+        extension = self.converted_output_image_format.lower()
+        ext_for_better_quality = extension.upper()
+        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        
+        try:
+            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
+        except Exception as e:
+                self.main_window.statusBar().showMessage(str(e))
+                return
+                
+        if not f:
+            self.main_window.statusBar().showMessage("Save cancelled")
+            return
+        
+        try:
+            if ext_for_better_quality in ('JPEG', 'JPG'):
+                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, quality=85, progressive=True)
+            elif ext_for_better_quality == 'PNG':
+                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, compress_level=8)
+            elif ext_for_better_quality == 'WEBP':
+                self.converted_output_image.save(f, format=self.converted_output_image_format, quality=85, lossless=False, method=6)
+            self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
     
     # Get output list info for QComboBox
     def get_output_file_format_list(self):
