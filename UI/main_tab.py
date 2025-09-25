@@ -41,7 +41,7 @@ class ConverterTab(QWidget):
         
         self.save_converted_btn = QPushButton("Save as")
         self.save_converted_btn.setFixedSize(100, 40)
-        self.save_converted_btn.clicked.connect(self.save_output)
+        self.save_converted_btn.clicked.connect(self.save_img)
         
         self.help_btn = QPushButton("Help")
         self.help_btn.setFixedSize(100, 40)
@@ -210,12 +210,41 @@ class ConverterTab(QWidget):
             if not real_format:
                 return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
             
-            img.save(output_file, format=real_format)
-            self.main_window.statusBar().showMessage(f"Saved as {real_format}")
-
+            converted_img = img.convert('RGB') if real_format in ('JPEG', 'JPG') else img.copy()
+            
+            self.converted_output_image = converted_img
+            self.converted_output_image_format = real_format
+            print(self.converted_output_image_format, real_format)
+            return converted_img
+            
         except Exception as e:
             return self.main_window.statusBar().showMessage(str(e))
         
+    def save_img(self):
+        extension = self.converted_output_image_format.lower()
+        ext_for_better_quality = extension.upper()
+        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        
+        try:
+            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
+        except Exception as e:
+                self.main_window.statusBar().showMessage(str(e))
+                return
+                
+        if not f:
+            self.main_window.statusBar().showMessage("Save cancelled")
+            return
+        
+        try:
+            if ext_for_better_quality in ('JPEG', 'JPG'):
+                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, quality=85, progressive=True)
+            elif ext_for_better_quality == 'PNG':
+                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, compress_level=8)
+            elif ext_for_better_quality == 'WEBP':
+                self.converted_output_image.save(f, format=self.converted_output_image_format, quality=85, lossless=False, method=6)
+            self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
         
     def _convert_files(self, inp_file, out_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
@@ -224,7 +253,6 @@ class ConverterTab(QWidget):
         out_file_ext = outpt_format.lower().lstrip('.')
 
         sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
-        print(sce_files)
 
         if file_ext == ".txt":
             self.main_window.statusBar().showMessage("Can not convert from txt file")
