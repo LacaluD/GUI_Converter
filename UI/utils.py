@@ -7,6 +7,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
+from PIL.ImageQt import ImageQt
 from pathlib import Path
 
 class Converter():
@@ -118,16 +119,16 @@ class Converter():
         
     def get_save_filename(self, default_name, filters):
         try:
-            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", default_name, filters)
+            self.doc_file_path, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", default_name, filters)
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
             return None
                 
-        if not f:
+        if not self.doc_file_path:
             self.main_window.statusBar().showMessage("Save cancelled")
             return None
 
-        return f
+        return self.doc_file_path
     
     def save_audio_video_conv_file(self, out):
         ext = Path(out).suffix.lower().lstrip('.')
@@ -138,33 +139,55 @@ class Converter():
             filters = "Audio Files (*.mp3 *.wav)"
         
         try:
-            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", f"untitled.{ext}", filters)
+            self.video_file_path, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", f"untitled.{ext}", filters)
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
             return None
                 
-        if not f:
+        if not self.video_file_path:
             self.main_window.statusBar().showMessage("Save cancelled")
             return None
 
-        return f
+        # print(self.video_file_path)
+        return self.video_file_path
 
 class Previewer:
-    def __init__(self, main_window):
+    def __init__(self, main_window, converter):
         self.main_window = main_window
-        self.player = QMediaPlayer()
         
-    def preview_file(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
+        self.player = QMediaPlayer()
+        self.converter = converter
+        
+    def preview_file(self, prev_title, prev_info, prev_label, curr_file):
         file = curr_file
+        
+        try:
+            self.output_file = self.converter.doc_file_path
+            # print(f"Output file: {self.output_file}, Current file: {curr_file}")
+        except AttributeError:
+            self.main_window.statusBar().showMessage("Converted file is not avalible")
         
         if not file or not Path(file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        if file:
+        if file or self.output_file:
             try:
-                with open(file, 'r', encoding='utf-8') as in_file:
-                    content = in_file.read()
+                if file and not self.output_file:
+                    with open(file, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                        self.main_window.statusBar().showMessage(f"Loaded content from: {file}")
+                        
+                elif not file and self.output_file:
+                    with open(self.output_file, 'r', encoding='utf-8') as file:
+                        content = file.read
+                        self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
+                        
+                elif file and self.output_file:
+                    with open(self.output_file, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                        self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
+                
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
                 return
@@ -190,10 +213,8 @@ class Previewer:
             self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
             return
         
-        self.main_window.statusBar().showMessage("Successfully loaded file content")
-        
     # Preview Pictures
-    def preview_picture(self, prev_title, prev_info, prev_label, curr_file):
+    def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
         file = curr_file
         
         if not file or not Path(file).exists():
@@ -201,7 +222,14 @@ class Previewer:
             return
         
         if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            self.pixmap = QPixmap(file)
+            print(file, convert_file)
+            if file and not convert_file:
+                self.pixmap = QPixmap(file)
+            elif not file and convert_file:
+                self.pixmap = self.pil_to_pixmap(convert_file)
+            elif file and convert_file:
+                self.pixmap = self.pil_to_pixmap(convert_file)
+                
             if self.pixmap.isNull():
                 self.main_window.statusBar().showMessage("Failed to load image")
                 return
@@ -213,18 +241,29 @@ class Previewer:
             self.main_window.statusBar().showMessage("Successfully loaded image")
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
+    
+    def pil_to_pixmap(self, pil_img):
+        qt_image = ImageQt(pil_img)
+        pixmap = QPixmap.fromImage(qt_image)
+        return pixmap
         
     # Preview video
-    def preview_video(self, prev_title, prev_info, prev_label, curr_file, final_file=None):
+    def preview_video(self, prev_title, prev_info, prev_label, curr_file):
         current_source = self.player.source().toLocalFile() if self.player.source() else None
         
+        try:
+            self.output_video = self.converter.video_file_path
+            print(f"Output vid: {self.output_video}, Current vid: {curr_file}")
+        except AttributeError:
+            self.main_window.statusBar().showMessage("Converted video is not avalible")
+                
         # Check if file exists
         if not curr_file or not Path(curr_file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
         # Check if file is already loaded
-        if current_source == (curr_file or final_file):
+        if current_source == (curr_file or self.output_video):
             self.main_window.statusBar().showMessage("Video Previwer already exist")
             return
         
@@ -270,12 +309,12 @@ class Previewer:
                     vid_prev_buttons_layout.addLayout(vid_slider_layout)
                     
                     # Check the file to play
-                    if curr_file and not final_file:
+                    if curr_file and not self.output_video:
                         self.player.setSource(QUrl.fromLocalFile(curr_file))
-                    elif not curr_file and final_file:
-                        self.player.setSource(QUrl.fromLocalFile(final_file))
-                    elif curr_file and final_file:
-                        self.player.setSource(QUrl.fromLocalFile(final_file))
+                    elif not curr_file and self.output_video:
+                        self.player.setSource(QUrl.fromLocalFile(self.output_video))
+                    elif curr_file and self.output_video:
+                        self.player.setSource(QUrl.fromLocalFile(self.output_video))
                     else:
                         self.main_window.statusBar().showMessage("No file loaded")
                         
@@ -333,7 +372,6 @@ class Previewer:
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn, 
                                  self.pause_btn, self.current_vid_time, self.total_vid_time]
         try: 
-            
             self.player.stop()
             self.player.setVideoOutput(None)
             self.player.setAudioOutput(None)

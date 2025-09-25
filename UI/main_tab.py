@@ -23,7 +23,7 @@ class ConverterTab(QWidget):
         self.converted_output_image_format = None
         
         self.converter = Converter(self.main_window)
-        self.previewer = Previewer(self.main_window)
+        self.previewer = Previewer(self.main_window, self.converter)
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -171,7 +171,7 @@ class ConverterTab(QWidget):
         self.drop_down_list.clear()
         self.drop_down_list.addItems(formats)
         
-#    Convertation logick
+    # Convertation logick
     def convert_files(self):
         self.main_window.statusBar().showMessage("Convert files clicked")
         
@@ -220,7 +220,7 @@ class ConverterTab(QWidget):
             
             self.converted_output_image = converted_img
             self.converted_output_image_format = real_format
-            print(self.converted_output_image_format, real_format)
+            # print(self.converted_output_image_format, real_format)
             return converted_img
             
         except Exception as e:
@@ -285,7 +285,6 @@ class ConverterTab(QWidget):
         
         elif self.extension_format in sce_files:
             self.converter.save_audio_video_conv_file(self.extension_format)
-            print('here2')
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
@@ -355,13 +354,14 @@ class ConverterTab(QWidget):
         if self.current_file:
             if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 self.previewer.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
-                                                    prev_label=self.preview_label, curr_file=self.current_file)
+                                                    prev_label=self.preview_label, curr_file=self.current_file, 
+                                                    convert_file=self.converted_output_image)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 self.previewer.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
-                            prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+                            prev_label=self.preview_label, curr_file=self.current_file)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
                 self.previewer.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
-                            prev_label=self.preview_label, curr_file=self.current_file, final_file=None)
+                            prev_label=self.preview_label, curr_file=self.current_file)
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
                 return
