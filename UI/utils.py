@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel
+from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from pathlib import Path
@@ -14,20 +14,29 @@ class Converter():
         self.main_window = main_window
         
     # from csv to txt
-    def convert_csv_txt(self, inp, out):
+    def convert_csv_txt(self, inp):
+        get_filename = self.get_save_filename('untitled.txt', "Text Files (*.txt)")
+        if not get_filename:
+            return
+        
         with open(inp, newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
-            with open(out, 'w', encoding='utf-8') as out_file:
+            with open(get_filename, 'w', encoding='utf-8') as out_file:
                 out_file.write('\t'.join(reader.fieldnames) + '\n')
                 for row in reader:
                     out_file.write('\t'.join(row.values()) + '\n')
             self.main_window.statusBar().showMessage("Finished converting csv to txt")
 
+
     # from json to txt
-    def convert_json_txt(self, inp, out):
+    def convert_json_txt(self, inp):
+        get_filename = self.get_save_filename('untitled.txt', "Text Files (*.txt)")
+        if not get_filename:
+            return
+        
         with open(inp, 'r', encoding='utf-8') as file:
             reader = json.load(file)
-            with open(out, 'w', encoding='utf-8') as out_file:
+            with open(get_filename, 'w', encoding='utf-8') as out_file:
                 if isinstance(reader, list):
                     for item in reader:
                         if isinstance(reader, dict):
@@ -44,18 +53,25 @@ class Converter():
         self.main_window.statusBar().showMessage("Finished converting json to txt")
                     
     # from csv to json
-    def convert_csv_json(self, inp, out):
-        self.main_window.statusBar().showMessage("Started converting csv to json")
+    def convert_csv_json(self, inp):
+        get_filename = self.get_save_filename('untitled.json', "Text Files (*.json)")
+        if not get_filename:
+            return
+        
         with open(inp, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             data = list(reader)
             
-        with open(out, 'w', encoding='utf-8') as jsonfile:
+        with open(get_filename, 'w', encoding='utf-8') as jsonfile:
             json.dump(data, jsonfile, ensure_ascii=False, indent=4)
             self.main_window.statusBar().showMessage("Finished converting csv to json")
             
     # from json to csv
-    def convert_json_csv(self, inp, out):
+    def convert_json_csv(self, inp):
+        get_filename = self.get_save_filename('untitled.csv', "Text Files (*.csv)")
+        if not get_filename:
+            return
+        
         with open(inp, 'r', encoding='utf-8') as in_file:
             data = json.load(in_file)
             
@@ -64,7 +80,7 @@ class Converter():
         
         fieldnames = data[0].keys() if data else []
         
-        with open(out, 'w', newline='', encoding='utf-8') as out_file:
+        with open(get_filename, 'w', newline='', encoding='utf-8') as out_file:
             writer = csv.DictWriter(out_file, fieldnames=fieldnames)
             writer.writeheader()
             for row in data:
@@ -95,6 +111,19 @@ class Converter():
             raise RuntimeError(f"Error FFMPEG Failed witd code {result.returncode}")
         
         self.main_window.statusBar().showMessage("Finished ffmpeg")
+        
+    def get_save_filename(self, default_name, filters):
+        try:
+            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", default_name, filters)
+        except Exception as e:
+            self.main_window.statusBar().showMessage(str(e))
+            return None
+                
+        if not f:
+            self.main_window.statusBar().showMessage("Save cancelled")
+            return None
+
+        return f
 
 class Previewer:
     def __init__(self, main_window):

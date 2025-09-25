@@ -243,13 +243,13 @@ class ConverterTab(QWidget):
         
         if file_ext in sce_files:
             if file_ext == "csv" and out_file_ext == "json":
-                self.converter.convert_csv_json(inp=inp_file, out=out_file)
+                self.converter.convert_csv_json(inp=inp_file)
             elif file_ext == "json" and out_file_ext == "csv":
-                self.converter.convert_json_csv(inp=inp_file, out=out_file)
+                self.converter.convert_json_csv(inp=inp_file)
             elif file_ext == "csv" and out_file_ext == "txt":
-                self.converter.convert_csv_txt(inp=inp_file, out=out_file)
+                self.converter.convert_csv_txt(inp=inp_file)
             elif file_ext == "json" and out_file_ext == "txt":
-                self.converter.convert_json_txt(inp=inp_file, out=out_file)
+                self.converter.convert_json_txt(inp=inp_file)
         else:
             self.main_window.statusBar().showMessage(f"Formats are unsupported")
             
@@ -269,14 +269,22 @@ class ConverterTab(QWidget):
     def save_converted_file(self):
         p = self.previewer
         sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
-        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]
+        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without .
         
+        sce_files = SUPPORTED_CONVERT_EXTENSIONS_FILES
+        sce_files = [elem.lstrip('.').upper() for elem in sce_files]
+        
+        sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
+        sce_audio_video = [elem.lstrip('.').upper() for elem in sce_audio_video]
         if not self.converted_output_image or not self.converted_output_image_format:
             self.main_window.statusBar().showMessage("No converted file to save")
             return
         
         if self.converted_output_image_format in sce_pictures:
             self.save_img()
+        
+        # elif self.converted_output_image_format in sce_files:
+        #     self.converter.get_save_filename(file_ext=self.extension_format)
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
