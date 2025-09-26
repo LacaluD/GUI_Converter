@@ -47,6 +47,15 @@ full_vers.py
 *test*.*
 .venv/
 content.*
+*.png
+*.jpeg
+*.jpg
+*.txt
+*.json
+*.csv
+*.wav
+*.mp3
+*.mp4
 
 # Other
 cython_debug/

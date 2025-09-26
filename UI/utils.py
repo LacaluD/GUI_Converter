@@ -157,40 +157,94 @@ class Previewer:
         
         self.player = QMediaPlayer()
         self.converter = converter
+        self.output_video = None
+        self.output_file = None
         
+        self.slider_added = False
+        self.buttons_layout_added = False
+        self.current_vid_source = None
+
+
+        # Creating UI elements for Video/audio Preview 
+        # Creating Buttons
+        self.play_btn = QPushButton('Play ')
+        self.play_btn.clicked.connect(self.play_vid)
+        self.pause_btn = QPushButton('Pause ')
+        self.pause_btn.clicked.connect(self.pause_vid)
+        
+        # Creating labels to show current and total video time 
+        self.current_vid_time = QLabel('00:00')
+        self.total_vid_time = QLabel('00:00')
+        
+        # Creating main layout for all widgets in video player
+        self.vid_prev_buttons_layout = QHBoxLayout()
+        
+        # Setting up the Audio output
+        self.audio_output = QAudioOutput()
+        self.player.setAudioOutput(self.audio_output)
+        
+        # Creating slider with timestamps
+        self.video_slider = QSlider(Qt.Orientation.Horizontal)
+        self.video_slider.setRange(0, 0)
+        self.player.positionChanged.connect(self.update_slider_pos)
+        self.player.durationChanged.connect(self.update_duration)
+        self.video_slider.sliderMoved.connect(self.seek)
+        
+        self.vid_slider_layout = QHBoxLayout()
+        self.vid_slider_layout.addWidget(self.current_vid_time)
+        self.vid_slider_layout.addWidget(self.video_slider, stretch=1)
+        self.vid_slider_layout.addWidget(self.total_vid_time)
+        if not self.slider_added:
+            self.vid_prev_buttons_layout.addLayout(self.vid_slider_layout)
+            self.slider_added = True
+        
+        # Setting up the buttons
+        self.vid_prev_buttons_layout.addSpacing(5)
+        self.vid_prev_buttons_layout.addWidget(self.play_btn)
+        self.vid_prev_buttons_layout.addSpacing(5)
+        self.vid_prev_buttons_layout.addWidget(self.pause_btn)
+        self.vid_prev_buttons_layout.addSpacing(5)
+    
+    # Preview files logic
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
-        
-        try:
-            self.output_file = self.converter.doc_file_path
-            # print(f"Output file: {self.output_file}, Current file: {curr_file}")
-        except AttributeError:
-            self.main_window.statusBar().showMessage("Converted file is not avalible")
-        
-        if not curr_file or not Path(file).exists():
+        # Checking if exists
+        if not curr_file:
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
+        try:
+            if hasattr(self.converter, 'doc_file_path'):
+                self.output_file = self.converter.doc_file_path
+        except AttributeError:
+            self.main_window.statusBar().showMessage("Converted file is not avalible")
+            return
+
+        # Reading converted data from doc-type files
         if curr_file or self.output_file:
             try:
                 if curr_file and not self.output_file:
                     with open(curr_file, 'r', encoding='utf-8') as file:
                         content = file.read()
                         self.main_window.statusBar().showMessage(f"Loaded content from: {curr_file}")
+                        last_loaded_file = curr_file
                         
                 elif not curr_file and self.output_file:
                     with open(self.output_file, 'r', encoding='utf-8') as file:
-                        content = file.read
+                        content = file.read()
                         self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
+                        last_loaded_file = self.output_file
                         
                 elif curr_file and self.output_file:
                     with open(self.output_file, 'r', encoding='utf-8') as file:
                         content = file.read()
                         self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
-                
+                        last_loaded_file = self.output_file
+                        
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
                 return
         
+        # Showing up the UI with loaded doc-type-file
         try:
             self.text_file_prev = QPlainTextEdit(prev_label.parent())
             self.text_file_prev.setReadOnly(True)
@@ -203,7 +257,13 @@ class Previewer:
                 prev_label.hide()
                 
                 self.text_file_prev.show()
-                self.text_file_prev.setPlainText(content)
+                
+                if last_loaded_file != (curr_file or self.output_file):
+                    self.text_file_prev.setPlainText(content)
+                else:
+                    self.main_window.statusBar().showMessage("File is already loaded")
+                    return
+
                 parent_layout.addWidget(self.text_file_prev)
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Error: {str(e)}")
@@ -216,19 +276,20 @@ class Previewer:
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
         file = curr_file
         
+        # Checking if exists
         if not file or not Path(file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
         if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            print(file, convert_file)
             if file and not convert_file:
                 self.pixmap = QPixmap(file)
             elif not file and convert_file:
                 self.pixmap = self.pil_to_pixmap(convert_file)
             elif file and convert_file:
                 self.pixmap = self.pil_to_pixmap(convert_file)
-                
+            
+            # Checking if not exists
             if self.pixmap.isNull():
                 self.main_window.statusBar().showMessage("Failed to load image")
                 return
@@ -237,10 +298,11 @@ class Previewer:
             prev_info.hide()
             
             prev_label.setPixmap(self.pixmap)
-            self.main_window.statusBar().showMessage("Successfully loaded image")
+            self.main_window.statusBar().showMessage(f"Successfully loaded image: {self.pixmap}")
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
     
+    # Convert image to QPixmap object
     def pil_to_pixmap(self, pil_img):
         qt_image = ImageQt(pil_img)
         pixmap = QPixmap.fromImage(qt_image)
@@ -248,41 +310,25 @@ class Previewer:
         
     # Preview video
     def preview_video(self, prev_title, prev_info, prev_label, curr_file):
-        current_source = self.player.source().toLocalFile() if self.player.source() else None
+        file_to_play = None
+        self.current_vid_source = None
         
-        try:
-            self.output_video = self.converter.video_file_path
-            print(f"Output vid: {self.output_video}, Current vid: {curr_file}")
-        except AttributeError:
-            self.main_window.statusBar().showMessage("Converted video is not avalible")
-                
         # Check if file exists
         if not curr_file or not Path(curr_file).exists():
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        # Check if file is already loaded
-        if current_source == (curr_file or self.output_video):
-            self.main_window.statusBar().showMessage("Video Previwer already exist")
+        try:
+            self.output_video = self.converter.video_file_path
+        except AttributeError:
+            self.main_window.statusBar().showMessage("Converted video is not avalible")
+        
+        if not curr_file:
+            self.main_window.statusBar().showMessage("No file selected")
             return
         
         if curr_file.lower().endswith(('.mp4', '.mp3', '.wav')):
-            try:
-                self.video_preview_widget = QVideoWidget(prev_label.parent())
-                
-                # Creating Buttons
-                self.play_btn = QPushButton('Play ')
-                self.play_btn.clicked.connect(self.play_vid)
-                self.pause_btn = QPushButton('Pause ')
-                self.pause_btn.clicked.connect(self.pause_vid)
-                
-                # Creating labels to show current and total video time 
-                self.current_vid_time = QLabel('00:00')
-                self.total_vid_time = QLabel('00:00')
-                
-                # Creating main layout for all widgets in video player
-                vid_prev_buttons_layout = QHBoxLayout()
-                
+            try:                
                 try:
                     # Getting the parent layout widget
                     parent_layout = prev_label.parent().layout()
@@ -292,46 +338,42 @@ class Previewer:
                     prev_info.hide()
                     prev_label.hide()
                     
-                    # Setting up the Audio output
-                    self.audio_output = QAudioOutput()
-                    self.player.setAudioOutput(self.audio_output)
-                    self.player.setVideoOutput(self.video_preview_widget)
-                    
-                    # Creating slider with timestamps
-                    self.video_slider = QSlider(Qt.Orientation.Horizontal)
-                    self.video_slider.setRange(0, 0)
+                    # Creating QVideoWidget if it wasn't created
+                    if not hasattr(self, 'video_preview_widget'):
+                        self.video_preview_widget = QVideoWidget(prev_label.parent())
+                        self.player.setVideoOutput(self.video_preview_widget)
+                        parent_layout.addWidget(self.video_preview_widget)
 
-                    vid_slider_layout = QHBoxLayout()
-                    vid_slider_layout.addWidget(self.current_vid_time)
-                    vid_slider_layout.addWidget(self.video_slider, stretch=1)
-                    vid_slider_layout.addWidget(self.total_vid_time)
-                    vid_prev_buttons_layout.addLayout(vid_slider_layout)
-                    
                     # Check the file to play
                     if curr_file and not self.output_video:
-                        self.player.setSource(QUrl.fromLocalFile(curr_file))
+                        file_to_play = curr_file
                     elif not curr_file and self.output_video:
-                        self.player.setSource(QUrl.fromLocalFile(self.output_video))
+                        file_to_play = self.output_video
                     elif curr_file and self.output_video:
-                        self.player.setSource(QUrl.fromLocalFile(self.output_video))
+                        file_to_play = self.output_video
                     else:
                         self.main_window.statusBar().showMessage("No file loaded")
-                        
-                    # Adding play/pause buttons to main video_previewer layout
-                    parent_layout.addWidget(self.video_preview_widget)
-                    vid_prev_buttons_layout.addSpacing(5)
-                    vid_prev_buttons_layout.addWidget(self.play_btn)
-                    vid_prev_buttons_layout.addSpacing(5)
-                    vid_prev_buttons_layout.addWidget(self.pause_btn)
-                    vid_prev_buttons_layout.addSpacing(5)
-                    parent_layout.addLayout(vid_prev_buttons_layout)
+
+                    # Updating current video source
+                    self.current_vid_source = self.player.source().toLocalFile()
                     
-                    # Connecting slider to update timestamp funcs
-                    self.player.positionChanged.connect(self.update_slider_pos)
-                    self.player.durationChanged.connect(self.update_duration)
-                    self.video_slider.sliderMoved.connect(self.seek)
-                    
-                    self.main_window.statusBar().showMessage("Successfully loaded file")
+                    # Checking to do not dublicate video players
+                    if file_to_play == self.current_vid_source:
+                        self.main_window.statusBar().showMessage("Audio player already exists with this file")
+                        return
+
+                    # Trying to set output video/audio file for video/audio player
+                    try:
+                        self.player.setSource(QUrl.fromLocalFile(file_to_play))
+                        self.main_window.statusBar().showMessage(f"Playing: {file_to_play}")
+                    except (FileNotFoundError, TypeError):
+                        self.main_window.statusBar().showMessage("Check filename or file path")
+                        return
+
+                    # Checking to do not dublicate UI buttons
+                    if not self.buttons_layout_added:
+                        parent_layout.addLayout(self.vid_prev_buttons_layout)
+                        self.buttons_layout_added = True
                     
                 except Exception as e:
                     self.main_window.statusBar().showMessage(f"Error: {str(e)}")

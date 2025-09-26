@@ -21,6 +21,7 @@ class ConverterTab(QWidget):
         self.current_file = None
         self.converted_output_image = None
         self.converted_output_image_format = None
+        self.preview_label = None
         
         self.converter = Converter(self.main_window)
         self.previewer = Previewer(self.main_window, self.converter)
@@ -350,17 +351,19 @@ class ConverterTab(QWidget):
     # Sorting funcs to start right func
     def preview_object(self):
         file_ext = self.extension_format
+        p = self.previewer
+        c = self.converter
         
         if self.current_file:
             if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                self.previewer.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
+                p.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
                                                     prev_label=self.preview_label, curr_file=self.current_file, 
                                                     convert_file=self.converted_output_image)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                self.previewer.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
+                p.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
                             prev_label=self.preview_label, curr_file=self.current_file)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-                self.previewer.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
+                p.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
                             prev_label=self.preview_label, curr_file=self.current_file)
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
@@ -369,7 +372,7 @@ class ConverterTab(QWidget):
             self.main_window.statusBar().showMessage("Upload file first")
             return
     
-    def save_img(self): #############################################################
+    def save_img(self):
         extension = self.converted_output_image_format.lower()
         ext_for_better_quality = extension.upper()
         ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
