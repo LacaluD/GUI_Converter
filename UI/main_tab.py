@@ -193,7 +193,7 @@ class ConverterTab(QWidget):
                 self._convert_image(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                self._convert_files(input_file, output_file, target_format)
+                self._convert_files(input_file,target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
                 self._convert_audio_video(input_file, output_file, target_format)
@@ -221,7 +221,6 @@ class ConverterTab(QWidget):
             
             self.converted_output_image = converted_img
             self.converted_output_image_format = real_format
-            # print(self.converted_output_image_format, real_format)
             return converted_img
             
         except Exception as e:
@@ -229,7 +228,7 @@ class ConverterTab(QWidget):
         
     
         
-    def _convert_files(self, inp_file, out_file, outpt_format):
+    def _convert_files(self, inp_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
 
         file_ext = self.extension_format.lower().lstrip('.')
@@ -263,12 +262,11 @@ class ConverterTab(QWidget):
         if file_ext in sce_audio_video and out_file_ext in sce_audio_video:
             self.converter.convert_audio_formats(inp=inp_file, out=out_file)
 
-        # ['txt', 'json', 'csv'] - without .
         self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
         
     # Save as button logic
     def save_converted_file(self):
-        p = self.previewer
+        c = self.converter
         sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
         sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without .
         
@@ -282,7 +280,7 @@ class ConverterTab(QWidget):
             return
         
         if self.converted_output_image_format in sce_pictures:
-            self.save_img()
+            c.save_img(convtd_out_img_format=self.converted_output_image_format, convt_out_img=self.converted_output_image)
         
         elif self.extension_format in sce_files:
             self.converter.save_audio_video_conv_file(self.extension_format)
@@ -327,7 +325,7 @@ class ConverterTab(QWidget):
     # Delete current file
     def reset_current_file(self):
         try:
-            del self.current_file
+            self.current_file = None
             self.format_field.setText("No file loaded")
             self.preview_label.clear()
         except Exception:
@@ -338,16 +336,14 @@ class ConverterTab(QWidget):
         try:
             self.previewer.text_file_prev.clear()
             self.previewer.text_file_prev.setVisible(False)
-            
         except Exception:
             return
     
     def clear_image_prev(self):
-        print('here')
         try:
             self.previewer.current_pixmap = None
             self.previewer.current_pixmap_id = None
-            # self.preview_label.setPixmap(QPixmap())
+            self.preview_label.setPixmap(QPixmap())
             self.preview_label.clear()
             self.preview_label.repaint()
         except Exception:
@@ -372,35 +368,13 @@ class ConverterTab(QWidget):
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
                 return
+        elif not self.current_file:
+            self.main_window.statusBar().showMessage("Upload file first")
+            return
         else:
             self.main_window.statusBar().showMessage("Upload file first")
             return
-    
-    def save_img(self):
-        extension = self.converted_output_image_format.lower()
-        ext_for_better_quality = extension.upper()
-        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
-        
-        try:
-            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
-        except Exception as e:
-                self.main_window.statusBar().showMessage(str(e))
-                return
-                
-        if not f:
-            self.main_window.statusBar().showMessage("Save cancelled")
-            return
-        
-        try:
-            if ext_for_better_quality in ('JPEG', 'JPG'):
-                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, quality=85, progressive=True)
-            elif ext_for_better_quality == 'PNG':
-                self.converted_output_image.save(f, format=self.converted_output_image_format, optimize=True, compress_level=8)
-            elif ext_for_better_quality == 'WEBP':
-                self.converted_output_image.save(f, format=self.converted_output_image_format, quality=85, lossless=False, method=6)
-            self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
-        except Exception as e:
-            self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
+
     
     # Get output list info for QComboBox
     def get_output_file_format_list(self):
@@ -425,6 +399,7 @@ class ConverterTab(QWidget):
             return []
         else:
             return self.extension_format
+        
         
     # Help button info
     def show_help_dialog(self):

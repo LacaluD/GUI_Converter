@@ -14,6 +14,8 @@ class Converter():
     def __init__(self, main_window):
         self.main_window = main_window
         
+        self.current_file = None
+        
     # from csv to txt
     def convert_csv_txt(self, inp):
         get_filename = self.get_save_filename('untitled.txt', "Text Files (*.txt)")
@@ -116,7 +118,8 @@ class Converter():
             raise RuntimeError(f"Error FFMPEG Failed witd code {result.returncode}")
         
         self.main_window.statusBar().showMessage("Finished ffmpeg")
-        
+    
+    # Universal func to save file and return filepath
     def get_save_filename(self, default_name, filters):
         try:
             self.doc_file_path, _ = QFileDialog.getSaveFileName(self.main_window, "Save File as", default_name, filters)
@@ -130,6 +133,8 @@ class Converter():
 
         return self.doc_file_path
     
+    
+    # Method to save converted audio or video file
     def save_audio_video_conv_file(self, out):
         ext = Path(out).suffix.lower().lstrip('.')
         
@@ -151,10 +156,41 @@ class Converter():
         # print(self.video_file_path)
         return self.video_file_path
 
+    
+    # Save func for images
+    def save_img(self, convtd_out_img_format, convt_out_img):
+        extension = convtd_out_img_format.lower()
+        ext_for_better_quality = extension.upper()
+        ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        
+        try:
+            f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
+        except Exception as e:
+                self.main_window.statusBar().showMessage(str(e))
+                return
+                
+        if not f:
+            self.main_window.statusBar().showMessage("Save cancelled")
+            return
+        
+        try:
+            if ext_for_better_quality in ('JPEG', 'JPG'):
+                convt_out_img.save(f, format=convtd_out_img_format, optimize=True, quality=85, progressive=True)
+            elif ext_for_better_quality == 'PNG':
+                convt_out_img.save(f, format=convtd_out_img_format, optimize=True, compress_level=8)
+            elif ext_for_better_quality == 'WEBP':
+                convt_out_img.save(f, format=convtd_out_img_format, quality=85, lossless=False, method=6)
+            self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
+    
+    
+    
 class Previewer:
     def __init__(self, main_window, converter):
         self.main_window = main_window
         
+        # Initializing some attributes before using in class methods
         self.player = QMediaPlayer()
         self.converter = converter
         self.output_video = None
@@ -163,9 +199,7 @@ class Previewer:
         self.slider_added = False
         self.buttons_layout_added = False
         self.current_vid_source = None
-        
-        # self.text_file_prev = QPlainTextEdit(prev_label.parent())
-        # self.text_file_prev.setReadOnly(True)
+
         self.last_loaded_file = None
         self.text_file_prev = None
         
@@ -222,7 +256,6 @@ class Previewer:
             self.output_file = Path(self.output_file).resolve()
             
         target_file = self.output_file or curr_file
-        # print(f"target file: {target_file}, output file: {self.output_file}")
         
         # Checking if exists
         if not target_file:
@@ -319,6 +352,7 @@ class Previewer:
         pixmap = QPixmap.fromImage(qt_image)
         return pixmap
         
+        
     # Preview video
     def preview_video(self, prev_title, prev_info, prev_label, curr_file):
         file_to_play = None
@@ -396,6 +430,7 @@ class Previewer:
             self.main_window.statusBar().showMessage("Unexpected error during loading video")
             return
     
+    
     # Support methods
     def play_vid(self):
         self.player.play()
@@ -422,7 +457,7 @@ class Previewer:
     
     def clear_vid_preview(self):
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn, 
-                                 self.pause_btn, self.current_vid_time, self.total_vid_time]
+                                 self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
         try: 
             self.player.stop()
             self.player.setVideoOutput(None)
