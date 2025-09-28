@@ -168,7 +168,10 @@ class Previewer:
         # self.text_file_prev.setReadOnly(True)
         self.last_loaded_file = None
         self.text_file_prev = None
-
+        
+        self.current_loaded_file = None
+        self.current_pixmap = None
+        self.current_pixmap_id = None
 
         # Creating UI elements for Video/audio Preview 
         # Creating Buttons
@@ -268,37 +271,50 @@ class Previewer:
     
     # Preview Pictures
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
-        file = curr_file
-        
-        # Checking if exists
-        if not file or not Path(file).exists():
+        # Giving hash-id for current running picture
+        if convert_file:
+            self.new_pixmap = self.pil_to_pixmap(convert_file)
+            identifier = f"Converted_{hash(convert_file.tobytes())}"
+        elif curr_file:
+            self.new_pixmap = QPixmap(curr_file)
+            identifier = curr_file
+        else:
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            if file and not convert_file:
-                self.pixmap = QPixmap(file)
-            elif not file and convert_file:
-                self.pixmap = self.pil_to_pixmap(convert_file)
-            elif file and convert_file:
-                self.pixmap = self.pil_to_pixmap(convert_file)
-            
-            # Checking if not exists
-            if self.pixmap.isNull():
-                self.main_window.statusBar().showMessage("Failed to load image")
-                return
-            
-            prev_title.hide()
-            prev_info.hide()
-            
-            prev_label.setPixmap(self.pixmap)
-            self.main_window.statusBar().showMessage(f"Successfully loaded image: {self.pixmap}")
-            print('Here')
-        else:
-            self.main_window.statusBar().showMessage("File format is not supported")
+        # Checking if exists
+        if not curr_file or not Path(curr_file).exists():
+            self.main_window.statusBar().showMessage("No file loaded")
+            return
+        
+        # Checking for duplicates
+        if hasattr(self, 'current_pixmap_id') and self.current_pixmap_id == identifier:
+            self.main_window.statusBar().showMessage("This image is already loaded")
+            return
+        
+        # Checking if not exists
+        if self.new_pixmap.isNull():
+            self.main_window.statusBar().showMessage("Failed to load image")
+            return
+        
+        # Setting up the UI
+        prev_title.hide()
+        prev_info.hide()
+        
+        prev_label.setPixmap(self.new_pixmap)
+        prev_label.repaint()
+        
+        self.current_pixmap_id = identifier
+        self.current_pixmap = self.new_pixmap
+        
+        msg = curr_file if curr_file else "converted image"
+        self.main_window.statusBar().showMessage(f"Successfully loaded image: {msg}")
+
     
     # Convert image to QPixmap object
     def pil_to_pixmap(self, pil_img):
+        if pil_img.mode != 'RGBA':
+            pil_img = pil_img.convert('RGBA')
         qt_image = ImageQt(pil_img)
         pixmap = QPixmap.fromImage(qt_image)
         return pixmap

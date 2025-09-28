@@ -302,7 +302,7 @@ class ConverterTab(QWidget):
             cleared = True
             self.main_window.statusBar().showMessage("Successfully cleared")
             
-        elif hasattr(p, 'pixmap') and isinstance(self.previewer.pixmap, QPixmap):
+        elif hasattr(p, 'new_pixmap') and isinstance(p.new_pixmap, QPixmap):
             self.reset_current_file()
             self.clear_image_prev()
             cleared = True
@@ -343,8 +343,13 @@ class ConverterTab(QWidget):
             return
     
     def clear_image_prev(self):
+        print('here')
         try:
-            self.preview_label.setPixmap(QPixmap())
+            self.previewer.current_pixmap = None
+            self.previewer.current_pixmap_id = None
+            # self.preview_label.setPixmap(QPixmap())
+            self.preview_label.clear()
+            self.preview_label.repaint()
         except Exception:
             return
         
