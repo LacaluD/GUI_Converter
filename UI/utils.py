@@ -212,11 +212,14 @@ class Previewer:
     
     # Preview files logic
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
-        self.output_file = getattr(self.converter, 'doc_file_path', None)
-        target_file = self.output_file or curr_file
-        print(f"target file: {target_file}, output file: {self.output_file}")
-        
         content = None
+        
+        self.output_file = getattr(self.converter, 'doc_file_path', None)
+        if self.output_file:
+            self.output_file = Path(self.output_file).resolve()
+            
+        target_file = self.output_file or curr_file
+        # print(f"target file: {target_file}, output file: {self.output_file}")
         
         # Checking if exists
         if not target_file:
@@ -227,33 +230,12 @@ class Previewer:
         target_file = Path(target_file).resolve()
         if self.last_loaded_file:
             self.last_loaded_file = Path(self.last_loaded_file).resolve()
-            print(self.last_loaded_file)
         
-        if self.last_loaded_file and self.last_loaded_file == self.output_file:
+        if self.last_loaded_file and self.last_loaded_file == target_file:
             self.main_window.statusBar().showMessage("This file is already loaded")
             return
 
-        # Reading converted data from doc-type files
-        # if curr_file or self.output_file:
-            # try:
-        #         if curr_file and not self.output_file:
-        #             with open(curr_file, 'r', encoding='utf-8') as file:
-        #                 content = file.read()
-        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {curr_file}")
-        #                 self.last_loaded_file = curr_file
-                        
-        #         elif not curr_file and self.output_file:
-        #             with open(self.output_file, 'r', encoding='utf-8') as file:
-        #                 content = file.read()
-        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
-        #                 self.last_loaded_file = self.output_file
-                        
-        #         elif curr_file and self.output_file:
-        #             with open(self.output_file, 'r', encoding='utf-8') as file:
-        #                 content = file.read()
-        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
-        #                 self.last_loaded_file = self.output_file
-                
+        # Reading converted data from doc-type files                
         try:
             with open(target_file, 'r', encoding='utf-8') as file:
                 content = file.read()
@@ -276,14 +258,13 @@ class Previewer:
                 prev_info.hide()
                 prev_label.hide()
                 
-                self.text_file_prev.setPlainText(content)
-                self.text_file_prev.show()
+            self.text_file_prev.setPlainText(content)
+            self.text_file_prev.show()
                 
         except Exception as e:
             self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
             return
-    
-    
+
     
     # Preview Pictures
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
@@ -312,6 +293,7 @@ class Previewer:
             
             prev_label.setPixmap(self.pixmap)
             self.main_window.statusBar().showMessage(f"Successfully loaded image: {self.pixmap}")
+            print('Here')
         else:
             self.main_window.statusBar().showMessage("File format is not supported")
     

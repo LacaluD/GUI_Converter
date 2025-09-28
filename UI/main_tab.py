@@ -352,7 +352,6 @@ class ConverterTab(QWidget):
     def preview_object(self):
         file_ext = self.extension_format
         p = self.previewer
-        c = self.converter
         
         if self.current_file:
             if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
