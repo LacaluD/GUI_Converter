@@ -163,6 +163,11 @@ class Previewer:
         self.slider_added = False
         self.buttons_layout_added = False
         self.current_vid_source = None
+        
+        # self.text_file_prev = QPlainTextEdit(prev_label.parent())
+        # self.text_file_prev.setReadOnly(True)
+        self.last_loaded_file = None
+        self.text_file_prev = None
 
 
         # Creating UI elements for Video/audio Preview 
@@ -207,71 +212,79 @@ class Previewer:
     
     # Preview files logic
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
+        self.output_file = getattr(self.converter, 'doc_file_path', None)
+        target_file = self.output_file or curr_file
+        print(f"target file: {target_file}, output file: {self.output_file}")
+        
+        content = None
+        
         # Checking if exists
-        if not curr_file:
+        if not target_file:
             self.main_window.statusBar().showMessage("No file loaded")
             return
         
-        try:
-            if hasattr(self.converter, 'doc_file_path'):
-                self.output_file = self.converter.doc_file_path
-        except AttributeError:
-            self.main_window.statusBar().showMessage("Converted file is not avalible")
+        
+        target_file = Path(target_file).resolve()
+        if self.last_loaded_file:
+            self.last_loaded_file = Path(self.last_loaded_file).resolve()
+            print(self.last_loaded_file)
+        
+        if self.last_loaded_file and self.last_loaded_file == self.output_file:
+            self.main_window.statusBar().showMessage("This file is already loaded")
             return
 
         # Reading converted data from doc-type files
-        if curr_file or self.output_file:
-            try:
-                if curr_file and not self.output_file:
-                    with open(curr_file, 'r', encoding='utf-8') as file:
-                        content = file.read()
-                        self.main_window.statusBar().showMessage(f"Loaded content from: {curr_file}")
-                        last_loaded_file = curr_file
+        # if curr_file or self.output_file:
+            # try:
+        #         if curr_file and not self.output_file:
+        #             with open(curr_file, 'r', encoding='utf-8') as file:
+        #                 content = file.read()
+        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {curr_file}")
+        #                 self.last_loaded_file = curr_file
                         
-                elif not curr_file and self.output_file:
-                    with open(self.output_file, 'r', encoding='utf-8') as file:
-                        content = file.read()
-                        self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
-                        last_loaded_file = self.output_file
+        #         elif not curr_file and self.output_file:
+        #             with open(self.output_file, 'r', encoding='utf-8') as file:
+        #                 content = file.read()
+        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
+        #                 self.last_loaded_file = self.output_file
                         
-                elif curr_file and self.output_file:
-                    with open(self.output_file, 'r', encoding='utf-8') as file:
-                        content = file.read()
-                        self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
-                        last_loaded_file = self.output_file
-                        
-            except Exception as e:
-                self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
-                return
+        #         elif curr_file and self.output_file:
+        #             with open(self.output_file, 'r', encoding='utf-8') as file:
+        #                 content = file.read()
+        #                 self.main_window.statusBar().showMessage(f"Loaded content from: {self.output_file}")
+        #                 self.last_loaded_file = self.output_file
+                
+        try:
+            with open(target_file, 'r', encoding='utf-8') as file:
+                content = file.read()
+            self.main_window.statusBar().showMessage(f"Got contentent from: {target_file}")
+            self.last_loaded_file = target_file
+        except Exception as e:
+            self.main_window.statusBar().showMessage("Error while getting content")
+            return
         
         # Showing up the UI with loaded doc-type-file
         try:
-            self.text_file_prev = QPlainTextEdit(prev_label.parent())
-            self.text_file_prev.setReadOnly(True)
+            if not self.text_file_prev:
+                self.text_file_prev = QPlainTextEdit()
+                self.text_file_prev.setReadOnly(True)
             
-            try:
                 parent_layout = prev_label.parent().layout()
+                parent_layout.addWidget(self.text_file_prev)
                 
                 prev_title.hide()
                 prev_info.hide()
                 prev_label.hide()
                 
+                self.text_file_prev.setPlainText(content)
                 self.text_file_prev.show()
-                
-                if last_loaded_file != (curr_file or self.output_file):
-                    self.text_file_prev.setPlainText(content)
-                else:
-                    self.main_window.statusBar().showMessage("File is already loaded")
-                    return
-
-                parent_layout.addWidget(self.text_file_prev)
-            except Exception as e:
-                self.main_window.statusBar().showMessage(f"Error: {str(e)}")
                 
         except Exception as e:
             self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
             return
-        
+    
+    
+    
     # Preview Pictures
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
         file = curr_file
