@@ -4,7 +4,7 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
-from .utils import Converter, Previewer
+from .utils import Converter, Previewer, SideMethods
 from .constants import *
 
 import os
@@ -19,12 +19,12 @@ class ConverterTab(QWidget):
         # Values by default
         self.extension_format = [None]
         self.current_file = None
-        self.converted_output_image = None
-        self.converted_output_image_format = None
         self.preview_label = None
         
         self.converter = Converter(self.main_window)
         self.previewer = Previewer(self.main_window, self.converter)
+        self.side_funcs = SideMethods(conv_tab=self, main_window=self.main_window, 
+                                    previewer=self.previewer, converter=self.converter)
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -40,7 +40,7 @@ class ConverterTab(QWidget):
         
         self.clear_btn = QPushButton("Reset")
         self.clear_btn.setFixedSize(100, 40)
-        self.clear_btn.clicked.connect(self.clear_all_fields)
+        self.clear_btn.clicked.connect(self.side_funcs.clear_all_fields)
         
         self.show_btn = QPushButton("Show")
         self.show_btn.setFixedSize(100, 40)
@@ -134,7 +134,7 @@ class ConverterTab(QWidget):
         self.setLayout(self.layout)
         
         
-    # Automaticly get extension format
+    # # Automaticly get extension format
     def get_extension_format(self, inpt_f):
         self.main_window.statusBar().showMessage("get ext format func started")
         
@@ -148,6 +148,7 @@ class ConverterTab(QWidget):
             self.main_window.statusBar().showMessage(str(e))
             return ext
         
+        # # # ext = '.txt'
         self.format_field.setText(self.extension_format)
         
         self.main_window.statusBar().showMessage("Successfully got format")
@@ -174,8 +175,6 @@ class ConverterTab(QWidget):
         
     # Convertation logick
     def convert_files(self):
-        self.main_window.statusBar().showMessage("Convert files clicked")
-        
         try:
             input_file = self.current_file
             target_format = self.drop_down_list.currentText().lower()
@@ -190,7 +189,7 @@ class ConverterTab(QWidget):
         # Checking extensions of images
         try:
             if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                self._convert_image(input_file, target_format)
+                self.side_funcs._convert_image(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 self._convert_files(input_file,target_format)
@@ -206,26 +205,6 @@ class ConverterTab(QWidget):
             return
         
         self.main_window.statusBar().showMessage("Successfully converted")
-        
-    # Converting logic for files
-    def _convert_image(self, input_file, target_format):
-        try:
-            img = Image.open(input_file)
-            clean_format = target_format.lstrip('.').upper()
-            real_format = PIC_EXTENSION_MAP.get(clean_format)
-
-            if not real_format:
-                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
-            
-            converted_img = img.convert('RGB') if real_format in ('JPEG', 'JPG') else img.copy()
-            
-            self.converted_output_image = converted_img
-            self.converted_output_image_format = real_format
-            return converted_img
-            
-        except Exception as e:
-            return self.main_window.statusBar().showMessage(str(e))
-        
     
         
     def _convert_files(self, inp_file, outpt_format):
@@ -267,6 +246,9 @@ class ConverterTab(QWidget):
     # Save as button logic
     def save_converted_file(self):
         c = self.converter
+        sf_conv_out_img = self.side_funcs.converted_output_image
+        sf_conv_out_img_form = self.side_funcs.converted_output_image_format
+        
         sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
         sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without .
         
@@ -275,79 +257,19 @@ class ConverterTab(QWidget):
         
         sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
         sce_audio_video = [elem.lstrip('.').upper() for elem in sce_audio_video]
-        if not self.converted_output_image or not self.converted_output_image_format:
+        if not sf_conv_out_img or not sf_conv_out_img_form:
             self.main_window.statusBar().showMessage("No converted file to save")
             return
         
-        if self.converted_output_image_format in sce_pictures:
-            c.save_img(convtd_out_img_format=self.converted_output_image_format, convt_out_img=self.converted_output_image)
+        if sf_conv_out_img_form in sce_pictures:
+            c.save_img(convtd_out_img_format=sf_conv_out_img_form, convt_out_img=sf_conv_out_img)
         
         elif self.extension_format in sce_files:
             self.converter.save_audio_video_conv_file(self.extension_format)
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
-        
-    # Clear button logic
-    def clear_all_fields(self):
-        self.main_window.statusBar().showMessage("Clear all clicked")
-        cleared = False
-        p = self.previewer
-        
-        if hasattr(p, 'text_file_prev') and isinstance(self.previewer.text_file_prev, QPlainTextEdit):
-            self.reset_current_file()
-            self.clear_file_prev()
-            cleared = True
-            self.main_window.statusBar().showMessage("Successfully cleared")
             
-        elif hasattr(p, 'new_pixmap') and isinstance(p.new_pixmap, QPixmap):
-            self.reset_current_file()
-            self.clear_image_prev()
-            cleared = True
-            self.main_window.statusBar().showMessage("Successfully cleared")
-            
-        elif hasattr(p, 'video_preview_widget') and isinstance(self.previewer.video_preview_widget, QVideoWidget):
-            self.reset_current_file()
-            self.previewer.clear_vid_preview()
-            cleared = True
-            self.main_window.statusBar().showMessage("Successfully cleared")
-            
-        if cleared:
-            self.main_window.statusBar().showMessage("Successfully cleared")
-        else:
-            self.main_window.statusBar().showMessage("Nothing to clear")
-            return
-        
-        self.preview_title.show()
-        self.preview_info.show()
-        self.drop_down_list.clear()
-    
-    # Delete current file
-    def reset_current_file(self):
-        try:
-            self.current_file = None
-            self.format_field.setText("No file loaded")
-            self.preview_label.clear()
-        except Exception:
-            return
-    
-    # Clear text layout
-    def clear_file_prev(self):
-        try:
-            self.previewer.text_file_prev.clear()
-            self.previewer.text_file_prev.setVisible(False)
-        except Exception:
-            return
-    
-    def clear_image_prev(self):
-        try:
-            self.previewer.current_pixmap = None
-            self.previewer.current_pixmap_id = None
-            self.preview_label.setPixmap(QPixmap())
-            self.preview_label.clear()
-            self.preview_label.repaint()
-        except Exception:
-            return
         
     # Sorting funcs to start right func
     def preview_object(self):
@@ -358,7 +280,7 @@ class ConverterTab(QWidget):
             if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 p.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
                                                     prev_label=self.preview_label, curr_file=self.current_file, 
-                                                    convert_file=self.converted_output_image)
+                                                    convert_file=self.side_funcs.converted_output_image)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 p.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
                             prev_label=self.preview_label, curr_file=self.current_file)

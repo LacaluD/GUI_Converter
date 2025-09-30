@@ -1,14 +1,17 @@
+import os
 import csv
 import json
 import subprocess
 from pathlib import Path
+from PIL import Image
 from PyQt6.QtCore import QUrl, Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PIL.ImageQt import ImageQt
-from pathlib import Path
+
+from UI.constants import *
 
 class Converter():
     def __init__(self, main_window):
@@ -479,5 +482,96 @@ class Previewer:
                 elem = None
                 
             self.player.disconnect()
+        except Exception:
+            return
+
+
+class SideMethods():
+    def __init__(self, main_window, previewer, converter, conv_tab):
+        self.main_window = main_window
+        self.previewer = previewer
+        self.converter = converter
+        self.convert_tab = conv_tab
+        
+        self.converted_output_image = None
+        self.converted_output_image_format = None
+        self.current_file = self.convert_tab.current_file
+    
+    
+    # Converting logic for files
+    def _convert_image(self, input_file, target_format):
+        try:
+            img = Image.open(input_file)
+            clean_format = target_format.lstrip('.').upper()
+            real_format = PIC_EXTENSION_MAP.get(clean_format)
+
+            if not real_format:
+                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
+            
+            converted_img = img.convert('RGB') if real_format in ('JPEG', 'JPG') else img.copy()
+            
+            self.converted_output_image = converted_img
+            self.converted_output_image_format = real_format
+            return converted_img
+            
+        except Exception as e:
+            return self.main_window.statusBar().showMessage(str(e))
+        
+        
+    # Clear button logic
+    def clear_all_fields(self):
+        self.main_window.statusBar().showMessage("Clear all clicked")
+        cleared = False
+        p = self.previewer
+        
+        if hasattr(p, 'text_file_prev') and isinstance(p.text_file_prev, QPlainTextEdit):
+            self.reset_current_file()
+            self.clear_file_prev()
+            cleared = True
+            
+        elif hasattr(p, 'new_pixmap') and isinstance(p.new_pixmap, QPixmap):
+            self.reset_current_file()
+            self.clear_image_prev()
+            cleared = True
+            
+        elif hasattr(p, 'video_preview_widget') and isinstance(p.video_preview_widget, QVideoWidget):
+            self.reset_current_file()
+            p.clear_vid_preview()
+            cleared = True
+            
+        if cleared:
+            self.main_window.statusBar().showMessage("Successfully cleared")
+        else:
+            self.main_window.statusBar().showMessage("Nothing to clear")
+            return
+        
+        self.convert_tab.preview_title.show()
+        self.convert_tab.preview_info.show()
+        self.convert_tab.drop_down_list.clear()
+    
+    # Delete current file
+    def reset_current_file(self):
+        try:
+            self.current_file = None
+            self.convert_tab.format_field.setText("No file loaded")
+            self.convert_tab.preview_label.clear()
+        except Exception:
+            return
+    
+    # Clear text layout
+    def clear_file_prev(self):
+        try:
+            self.previewer.text_file_prev.clear()
+            self.previewer.text_file_prev.setVisible(False)
+        except Exception:
+            return
+    
+    def clear_image_prev(self):
+        try:
+            self.previewer.current_pixmap = None
+            self.previewer.current_pixmap_id = None
+            self.convert_tab.preview_label.setPixmap(QPixmap())
+            self.convert_tab.preview_label.clear()
+            self.convert_tab.preview_label.repaint()
         except Exception:
             return

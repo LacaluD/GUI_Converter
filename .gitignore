@@ -37,7 +37,7 @@ TODO.md
 PROJECT_GOAL.md
 PROJECT_STRUCTURE.md
 test/
-tests/
+# tests/
 test_logs/
 configs/
 TEMP/
