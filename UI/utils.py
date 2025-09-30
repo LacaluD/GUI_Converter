@@ -541,7 +541,6 @@ class SideMethods():
         
         self.current_file = self.convert_tab.current_file
         
-        
     # # Automaticly get extension format
     def get_extension_format(self, inpt_f):
         self.main_window.statusBar().showMessage("get ext format func started")
@@ -645,3 +644,34 @@ class SideMethods():
             self.convert_tab.preview_label.repaint()
         except Exception:
             return
+    
+            
+    # Save as button logic
+    def save_converted_file(self):
+        c = self.converter
+        sf_conv_out_img = self.converter.converted_output_image
+        sf_conv_out_img_form = self.converter.converted_output_image_format
+        
+        sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
+        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without . UPPER
+        
+        sce_files = SUPPORTED_CONVERT_EXTENSIONS_FILES
+        sce_files = [elem.lstrip('.').upper() for elem in sce_files]
+        
+        sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
+        sce_audio_video = [elem.lstrip('.').upper() for elem in sce_audio_video]
+
+        if sf_conv_out_img_form in sce_pictures:
+            c.save_img(convtd_out_img_format=sf_conv_out_img_form, convt_out_img=sf_conv_out_img)
+        
+        elif self.extension_format in sce_files:
+            c.save_audio_video_conv_file(self.extension_format)
+            
+        elif not sf_conv_out_img or not sf_conv_out_img_form:
+            self.main_window.statusBar().showMessage("No converted file to save")
+            return
+        
+        else:
+            self.main_window.statusBar().showMessage("Error happened during saving output file")
+            
+    
