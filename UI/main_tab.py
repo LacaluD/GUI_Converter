@@ -14,14 +14,15 @@ class ConverterTab(QWidget):
         self.main_window = main_window  # ссылка на главное окно
         
         # Values by default
-        self.extension_format = [None]
         self.current_file = None
         self.preview_label = None
         
-        self.converter = Converter(self.main_window)
+        self.converter = Converter(sf=self, main_window=self.main_window)
         self.previewer = Previewer(self.main_window, self.converter)
         self.side_funcs = SideMethods(conv_tab=self, main_window=self.main_window, 
                                     previewer=self.previewer, converter=self.converter)
+        
+        self.extension_format = self.side_funcs.extension_format
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -157,9 +158,10 @@ class ConverterTab(QWidget):
             input_file = self.current_file
             target_format = self.drop_down_list.currentText().lower()
             ext_format = self.side_funcs.extension_format.lower()
+            print(f"Format: {[ext_format]}")
             
             base, _ = os.path.splitext(input_file)
-            output_file = f"{base}_test{target_format}"
+            output_file = f"untitled{target_format}"
         except Exception:
             self.main_window.statusBar().showMessage("Error: There is no file to convert")
             return
@@ -167,13 +169,13 @@ class ConverterTab(QWidget):
         # Checking extensions of images
         try:
             if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                self.side_funcs._convert_image(input_file, target_format)
+                self.converter._convert_image(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                self._convert_files(input_file,target_format)
+                self._convert_files(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-                self._convert_audio_video(input_file, output_file, target_format)
+                self.converter._convert_audio_video(input_file, output_file, target_format, curr_file_format=self.side_funcs.extension_format)
                 
             else:
                 self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
@@ -209,41 +211,32 @@ class ConverterTab(QWidget):
                 self.converter.convert_json_txt(inp=inp_file)
         else:
             self.main_window.statusBar().showMessage(f"Formats are unsupported")
-            
-    def _convert_audio_video(self, inp_file, out_file, outpt_format):
-        sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
-        
-        file_ext = self.side_funcs.extension_format.lower()
-        out_file_ext = outpt_format.lower()
-                
-        if file_ext in sce_audio_video and out_file_ext in sce_audio_video:
-            self.converter.convert_audio_formats(inp=inp_file, out=out_file)
 
-        self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
         
     # Save as button logic
     def save_converted_file(self):
         c = self.converter
-        sf_conv_out_img = self.side_funcs.converted_output_image
-        sf_conv_out_img_form = self.side_funcs.converted_output_image_format
+        sf_conv_out_img = self.converter.converted_output_image
+        sf_conv_out_img_form = self.converter.converted_output_image_format
         
         sce_pictures = SUPPORTED_CONVERT_EXTENSIONS_PICTURES
-        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without .
+        sce_pictures = [elem.lstrip('.').upper() for elem in sce_pictures]  # ['PNG', 'JPEG', 'JPG', 'WEBP'] - without . UPPER
         
         sce_files = SUPPORTED_CONVERT_EXTENSIONS_FILES
         sce_files = [elem.lstrip('.').upper() for elem in sce_files]
         
         sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
         sce_audio_video = [elem.lstrip('.').upper() for elem in sce_audio_video]
-        if not sf_conv_out_img or not sf_conv_out_img_form:
-            self.main_window.statusBar().showMessage("No converted file to save")
-            return
-        
+
         if sf_conv_out_img_form in sce_pictures:
             c.save_img(convtd_out_img_format=sf_conv_out_img_form, convt_out_img=sf_conv_out_img)
         
         elif self.side_funcs.extension_format in sce_files:
-            self.converter.save_audio_video_conv_file(self.side_funcs.extension_format)
+            c.save_audio_video_conv_file(self.side_funcs.extension_format)
+            
+        elif not sf_conv_out_img or not sf_conv_out_img_form:
+            self.main_window.statusBar().showMessage("No converted file to save")
+            return
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
@@ -258,7 +251,7 @@ class ConverterTab(QWidget):
             if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 p.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
                                                     prev_label=self.preview_label, curr_file=self.current_file, 
-                                                    convert_file=self.side_funcs.converted_output_image)
+                                                    convert_file=self.converter.converted_output_image)
             elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 p.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
                             prev_label=self.preview_label, curr_file=self.current_file)

@@ -14,10 +14,14 @@ from PIL.ImageQt import ImageQt
 from UI.constants import *
 
 class Converter():
-    def __init__(self, main_window):
+    def __init__(self, main_window, sf):
         self.main_window = main_window
+        self.conv_tab = sf
         
         self.current_file = None
+        
+        self.converted_output_image = None
+        self.converted_output_image_format = None
         
     # from csv to txt
     def convert_csv_txt(self, inp):
@@ -111,6 +115,7 @@ class Converter():
             return msg
         
         command = ['ffmpeg', '-y', '-i', inp, get_filename]
+        print(f"Command for ffmpeg: {command}")
         
         if ext_out == 'mp4':
             command += ['-c:a', 'aac']
@@ -121,6 +126,41 @@ class Converter():
             raise RuntimeError(f"Error FFMPEG Failed witd code {result.returncode}")
         
         self.main_window.statusBar().showMessage("Finished ffmpeg")
+        
+    
+    def _convert_audio_video(self, inp_file, out_file, outpt_format, curr_file_format):
+        # print(f"INP: {inp_file}, OUTP_FILE: {out_file}, OUTP_FORMAT: {outpt_format}, CUR_FILE_FORMAT: {curr_file_format}")
+        sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
+        
+        out_file_ext = outpt_format.lower()
+        
+        if curr_file_format in sce_audio_video and out_file_ext in sce_audio_video:
+            self.convert_audio_formats(inp=inp_file, out=out_file)
+        else:
+            self.main_window.statusBar().showMessage("Got error in _convert_audio_video method")
+            return
+
+        self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
+        
+    # Converting logic for files
+    def _convert_image(self, input_file, target_format):
+        try:
+            img = Image.open(input_file)
+            clean_format = target_format.lstrip('.').upper()
+            real_format = PIC_EXTENSION_MAP.get(clean_format)
+
+            if not real_format:
+                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
+            
+            converted_img = img.convert('RGB') if real_format in ('JPEG', 'JPG', 'WEBP') else img.copy()
+            
+            self.converted_output_image = converted_img
+            self.converted_output_image_format = real_format
+            return converted_img
+            
+        except Exception as e:
+            return self.main_window.statusBar().showMessage(str(e))
+    
     
     # Universal func to save file and return filepath
     def get_save_filename(self, default_name, filters):
@@ -156,7 +196,6 @@ class Converter():
             self.main_window.statusBar().showMessage("Save cancelled")
             return None
 
-        # print(self.video_file_path)
         return self.video_file_path
 
     
@@ -165,6 +204,8 @@ class Converter():
         extension = convtd_out_img_format.lower()
         ext_for_better_quality = extension.upper()
         ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
+        print(extension, ext_for_better_quality)
+        print(extension, ext_for_better_quality)
         
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
@@ -183,12 +224,13 @@ class Converter():
                 convt_out_img.save(f, format=convtd_out_img_format, optimize=True, compress_level=8)
             elif ext_for_better_quality == 'WEBP':
                 convt_out_img.save(f, format=convtd_out_img_format, quality=85, lossless=False, method=6)
+            else:
+                convt_out_img.save(f, format=convtd_out_img_format)
             self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
         except Exception as e:
             self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
     
-    
-    
+
 class Previewer:
     def __init__(self, main_window, converter):
         self.main_window = main_window
@@ -493,15 +535,11 @@ class SideMethods():
         self.converter = converter
         self.convert_tab = conv_tab
         
-        self.converted_output_image = None
-        self.converted_output_image_format = None
-        self.current_file = self.convert_tab.current_file
-        
         # Values by default
-        self.extension_format = [None]
-        # self.current_file = None
+        self.extension_format = None
         self.preview_label = None
         
+        self.current_file = self.convert_tab.current_file
         
         
     # # Automaticly get extension format
@@ -519,6 +557,7 @@ class SideMethods():
             return ext
         
         # # # ext = '.txt'
+        print(self.extension_format)
         self.convert_tab.format_field.setText(self.extension_format)
         
         self.main_window.statusBar().showMessage("Successfully got format")
@@ -546,29 +585,8 @@ class SideMethods():
         elif ext_format == '.txt':
             return []
         else:
-            return self.extension_format
-        
-    
-    
-    # Converting logic for files
-    def _convert_image(self, input_file, target_format):
-        try:
-            img = Image.open(input_file)
-            clean_format = target_format.lstrip('.').upper()
-            real_format = PIC_EXTENSION_MAP.get(clean_format)
+            return [str(ext_format)]
 
-            if not real_format:
-                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
-            
-            converted_img = img.convert('RGB') if real_format in ('JPEG', 'JPG') else img.copy()
-            
-            self.converted_output_image = converted_img
-            self.converted_output_image_format = real_format
-            return converted_img
-            
-        except Exception as e:
-            return self.main_window.statusBar().showMessage(str(e))
-        
         
     # Clear button logic
     def clear_all_fields(self):
