@@ -1,14 +1,11 @@
+import os
 from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
-                            QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog, QPlainTextEdit)
-from PyQt6.QtMultimediaWidgets import QVideoWidget
+                            QFileDialog, QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
 
 from .utils import Converter, Previewer, SideMethods
 from .constants import *
 
-import os
-from PIL import Image
 
 
 class ConverterTab(QWidget):
@@ -93,7 +90,7 @@ class ConverterTab(QWidget):
         
         row_layout.addWidget(QLabel("To "))
         self.drop_down_list = QComboBox()
-        formats = self.get_output_file_format_list()
+        formats = self.side_funcs.get_output_file_format_list()
         self.drop_down_list.clear()
         self.drop_down_list.addItems(formats)
         print(self.get_combobox_list_elems())
@@ -133,25 +130,6 @@ class ConverterTab(QWidget):
         self.layout.addWidget(self.pre_show_window_frame)
         self.setLayout(self.layout)
         
-        
-    # # Automaticly get extension format
-    def get_extension_format(self, inpt_f):
-        self.main_window.statusBar().showMessage("get ext format func started")
-        
-        try:
-            ext = os.path.splitext(inpt_f)[1].lower()
-            if not ext:
-                ext = "no extension"
-            self.extension_format = ext
-            self.format_field.setText(ext)
-        except Exception as e:
-            self.main_window.statusBar().showMessage(str(e))
-            return ext
-        
-        # # # ext = '.txt'
-        self.format_field.setText(self.extension_format)
-        
-        self.main_window.statusBar().showMessage("Successfully got format")
 
     # Upload button logic
     def upload_inpt_file(self):
@@ -167,9 +145,9 @@ class ConverterTab(QWidget):
             return
         
         self.current_file = file
-        self.get_extension_format(file)
+        self.side_funcs.get_extension_format(file)
         
-        formats = self.get_output_file_format_list()
+        formats = self.side_funcs.get_output_file_format_list()
         self.drop_down_list.clear()
         self.drop_down_list.addItems(formats)
         
@@ -178,7 +156,7 @@ class ConverterTab(QWidget):
         try:
             input_file = self.current_file
             target_format = self.drop_down_list.currentText().lower()
-            ext_format = self.extension_format.lower()
+            ext_format = self.side_funcs.extension_format.lower()
             
             base, _ = os.path.splitext(input_file)
             output_file = f"{base}_test{target_format}"
@@ -210,7 +188,7 @@ class ConverterTab(QWidget):
     def _convert_files(self, inp_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
 
-        file_ext = self.extension_format.lower().lstrip('.')
+        file_ext = self.side_funcs.extension_format.lower().lstrip('.')
         out_file_ext = outpt_format.lower().lstrip('.')
 
         sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
@@ -235,7 +213,7 @@ class ConverterTab(QWidget):
     def _convert_audio_video(self, inp_file, out_file, outpt_format):
         sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
         
-        file_ext = self.extension_format.lower()
+        file_ext = self.side_funcs.extension_format.lower()
         out_file_ext = outpt_format.lower()
                 
         if file_ext in sce_audio_video and out_file_ext in sce_audio_video:
@@ -264,8 +242,8 @@ class ConverterTab(QWidget):
         if sf_conv_out_img_form in sce_pictures:
             c.save_img(convtd_out_img_format=sf_conv_out_img_form, convt_out_img=sf_conv_out_img)
         
-        elif self.extension_format in sce_files:
-            self.converter.save_audio_video_conv_file(self.extension_format)
+        elif self.side_funcs.extension_format in sce_files:
+            self.converter.save_audio_video_conv_file(self.side_funcs.extension_format)
         
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
@@ -273,7 +251,7 @@ class ConverterTab(QWidget):
         
     # Sorting funcs to start right func
     def preview_object(self):
-        file_ext = self.extension_format
+        file_ext = self.side_funcs.extension_format
         p = self.previewer
         
         if self.current_file:
@@ -297,31 +275,6 @@ class ConverterTab(QWidget):
             self.main_window.statusBar().showMessage("Upload file first")
             return
 
-    
-    # Get output list info for QComboBox
-    def get_output_file_format_list(self):
-        self.main_window.statusBar().showMessage("get output file format")
-        
-        ext_format = self.extension_format
-        
-        sce_pictures_copy = SUPPORTED_CONVERT_EXTENSIONS_PICTURES.copy()
-        sce_files_copy = SUPPORTED_CONVERT_EXTENSIONS_FILES.copy()
-        sce_videos_copy = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
-        
-        if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-            sce_pictures_copy.remove(ext_format)
-            return sce_pictures_copy
-        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and ext_format != '.txt':
-            sce_files_copy.remove(ext_format)
-            return sce_files_copy
-        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-            sce_videos_copy.remove(ext_format)
-            return sce_videos_copy
-        elif ext_format == '.txt':
-            return []
-        else:
-            return self.extension_format
-        
         
     # Help button info
     def show_help_dialog(self):

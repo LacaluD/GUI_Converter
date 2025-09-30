@@ -496,6 +496,58 @@ class SideMethods():
         self.converted_output_image = None
         self.converted_output_image_format = None
         self.current_file = self.convert_tab.current_file
+        
+        # Values by default
+        self.extension_format = [None]
+        # self.current_file = None
+        self.preview_label = None
+        
+        
+        
+    # # Automaticly get extension format
+    def get_extension_format(self, inpt_f):
+        self.main_window.statusBar().showMessage("get ext format func started")
+        
+        try:
+            ext = os.path.splitext(inpt_f)[1].lower()
+            if not ext:
+                ext = "no extension"
+            self.extension_format = ext
+            self.convert_tab.format_field.setText(ext)
+        except Exception as e:
+            self.main_window.statusBar().showMessage(str(e))
+            return ext
+        
+        # # # ext = '.txt'
+        self.convert_tab.format_field.setText(self.extension_format)
+        
+        self.main_window.statusBar().showMessage("Successfully got format")
+        
+        
+    # Get output list info for QComboBox
+    def get_output_file_format_list(self):
+        self.main_window.statusBar().showMessage("get output file format")
+        
+        ext_format = self.extension_format
+        
+        sce_pictures_copy = SUPPORTED_CONVERT_EXTENSIONS_PICTURES.copy()
+        sce_files_copy = SUPPORTED_CONVERT_EXTENSIONS_FILES.copy()
+        sce_videos_copy = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
+        
+        if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+            sce_pictures_copy.remove(ext_format)
+            return sce_pictures_copy
+        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and ext_format != '.txt':
+            sce_files_copy.remove(ext_format)
+            return sce_files_copy
+        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+            sce_videos_copy.remove(ext_format)
+            return sce_videos_copy
+        elif ext_format == '.txt':
+            return []
+        else:
+            return self.extension_format
+        
     
     
     # Converting logic for files
