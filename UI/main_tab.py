@@ -19,11 +19,12 @@ class ConverterTab(QWidget):
         self.preview_label = None
         
         self.converter = Converter(sf=self, main_window=self.main_window)
-        self.previewer = Previewer(self.main_window, self.converter)
         self.side_funcs = SideMethods(conv_tab=self, main_window=self.main_window, 
-                                    previewer=self.previewer, converter=self.converter)
-        
-        self.extension_format = self.side_funcs.extension_format
+                                    converter=self.converter)
+        self.previewer = Previewer(conv_tab=self, main_window=self.main_window, 
+                                converter=self.converter, side_funcs=self.side_funcs)
+
+        self.side_funcs.previewer = self.previewer
         
         self.layout = QVBoxLayout()
         buttons_layout = QHBoxLayout()
@@ -43,7 +44,7 @@ class ConverterTab(QWidget):
         
         self.show_btn = QPushButton("Show")
         self.show_btn.setFixedSize(100, 40)
-        self.show_btn.clicked.connect(self.preview_object)
+        self.show_btn.clicked.connect(self.previewer.preview_object)
         
         self.save_converted_btn = QPushButton("Save as")
         self.save_converted_btn.setFixedSize(100, 40)
@@ -173,7 +174,7 @@ class ConverterTab(QWidget):
                 self.converter._convert_image(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                self._convert_files(input_file, target_format)
+                self.side_funcs._convert_files(input_file, target_format)
                 
             elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
                 self.converter._convert_audio_video(input_file, output_file, target_format, curr_file_format=self.side_funcs.extension_format)
@@ -186,59 +187,6 @@ class ConverterTab(QWidget):
             return
         
         self.main_window.statusBar().showMessage("Successfully converted")
-    
-        
-    def _convert_files(self, inp_file, outpt_format):
-        self.main_window.statusBar().showMessage("Convert files initialized")
-
-        file_ext = self.side_funcs.extension_format.lower().lstrip('.')
-        out_file_ext = outpt_format.lower().lstrip('.')
-
-        sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
-
-        if file_ext == ".txt":
-            self.main_window.statusBar().showMessage("Can not convert from txt file")
-            return []
-        
-        
-        if file_ext in sce_files:
-            if file_ext == "csv" and out_file_ext == "json":
-                self.converter.convert_csv_json(inp=inp_file)
-            elif file_ext == "json" and out_file_ext == "csv":
-                self.converter.convert_json_csv(inp=inp_file)
-            elif file_ext == "csv" and out_file_ext == "txt":
-                self.converter.convert_csv_txt(inp=inp_file)
-            elif file_ext == "json" and out_file_ext == "txt":
-                self.converter.convert_json_txt(inp=inp_file)
-        else:
-            self.main_window.statusBar().showMessage(f"Formats are unsupported")
-
-        
-    # Sorting funcs to start right func
-    def preview_object(self):
-        file_ext = self.side_funcs.extension_format
-        p = self.previewer
-        
-        if self.current_file:
-            if file_ext in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                p.preview_picture(prev_title=self.preview_title, prev_info=self.preview_info, 
-                                                    prev_label=self.preview_label, curr_file=self.current_file, 
-                                                    convert_file=self.converter.converted_output_image)
-            elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                p.preview_file(prev_title=self.preview_title, prev_info=self.preview_info, 
-                            prev_label=self.preview_label, curr_file=self.current_file)
-            elif file_ext in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-                p.preview_video(prev_title=self.preview_title, prev_info=self.preview_info, 
-                            prev_label=self.preview_label, curr_file=self.current_file)
-            else:
-                self.main_window.statusBar().showMessage("Unsupported file format")
-                return
-        elif not self.current_file:
-            self.main_window.statusBar().showMessage("Upload file first")
-            return
-        else:
-            self.main_window.statusBar().showMessage("Upload file first")
-            return
 
         
     # Help button info

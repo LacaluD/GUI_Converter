@@ -232,12 +232,14 @@ class Converter():
     
 
 class Previewer:
-    def __init__(self, main_window, converter):
+    def __init__(self, main_window, converter, conv_tab, side_funcs):
         self.main_window = main_window
+        self.converter = converter
+        self.convert_tab = conv_tab
+        self.side_funcs = side_funcs
         
         # Initializing some attributes before using in class methods
         self.player = QMediaPlayer()
-        self.converter = converter
         self.output_video = None
         self.output_file = None
         
@@ -526,12 +528,43 @@ class Previewer:
             self.player.disconnect()
         except Exception:
             return
+        
+        
+    # Sorting funcs to start right func
+    def preview_object(self):
+        self.ct = self.convert_tab
+        
+        if self.ct.current_file:
+            print(f"Curr file: {self.ct.current_file}, Ext: {self.side_funcs.extension_format}")
+            if self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+                self.preview_picture(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
+                                                    prev_label=self.ct.preview_label, curr_file=self.ct.current_file, 
+                                                    convert_file=self.converter.converted_output_image)
+                print(self.ct.preview_title, self.ct.preview_info, 
+                    self.ct.preview_label, self.ct.current_file, 
+                    self.converter.converted_output_image)
+            elif self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+                self.preview_file(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
+                            prev_label=self.ct.preview_label, curr_file=self.ct.current_file)
+            elif self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+                self.preview_video(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
+                            prev_label=self.ct.preview_label, curr_file=self.ct.current_file)
+            else:
+                self.main_window.statusBar().showMessage("Unsupported file format")
+                print(self.ct.preview_title, self.ct.preview_info, self.ct.preview_label, self.ct.current_file)
+                return
+        elif not self.ct.current_file:
+            self.main_window.statusBar().showMessage("Upload file first")
+            return
+        else:
+            self.main_window.statusBar().showMessage("Upload file first")
+            return
+        
 
 
 class SideMethods():
-    def __init__(self, main_window, previewer, converter, conv_tab):
+    def __init__(self, main_window, converter, conv_tab):
         self.main_window = main_window
-        self.previewer = previewer
         self.converter = converter
         self.convert_tab = conv_tab
         
@@ -675,3 +708,27 @@ class SideMethods():
             self.main_window.statusBar().showMessage("Error happened during saving output file")
             
     
+    def _convert_files(self, inp_file, outpt_format):
+        self.main_window.statusBar().showMessage("Convert files initialized")
+
+        file_ext = self.extension_format.lower().lstrip('.')
+        out_file_ext = outpt_format.lower().lstrip('.')
+
+        sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
+
+        if file_ext == ".txt":
+            self.main_window.statusBar().showMessage("Can not convert from txt file")
+            return []
+        
+        
+        if file_ext in sce_files:
+            if file_ext == "csv" and out_file_ext == "json":
+                self.converter.convert_csv_json(inp=inp_file)
+            elif file_ext == "json" and out_file_ext == "csv":
+                self.converter.convert_json_csv(inp=inp_file)
+            elif file_ext == "csv" and out_file_ext == "txt":
+                self.converter.convert_csv_txt(inp=inp_file)
+            elif file_ext == "json" and out_file_ext == "txt":
+                self.converter.convert_json_txt(inp=inp_file)
+        else:
+            self.main_window.statusBar().showMessage(f"Formats are unsupported")
