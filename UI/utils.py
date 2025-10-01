@@ -623,8 +623,9 @@ class SideMethods():
         # # # ext = '.txt'
         # print(self.extension_format)
         self.convert_tab.format_field.setText(self.extension_format)
-        
         self.main_window.statusBar().showMessage("Successfully got format")
+        return self.extension_format
+        
         
         
     # Get output list info for QComboBox
@@ -654,6 +655,7 @@ class SideMethods():
     # Upload button logic
     def upload_inpt_file(self):
         self.main_window.statusBar().showMessage("Upload file clicked")
+        file = None
         
         try:
             file, _ = QFileDialog.getOpenFileName(self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)")

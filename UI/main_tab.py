@@ -99,7 +99,7 @@ class ConverterTab(QWidget):
         formats = self.side_funcs.get_output_file_format_list()
         self.drop_down_list.clear()
         self.drop_down_list.addItems(formats)
-        print(self.get_combobox_list_elems())
+        # print(self.get_combobox_list_elems())                     №№№№№№№№№№№№№№№№
         self.drop_down_list.setFixedSize(100, 30)
         row_layout.addWidget(self.drop_down_list)
 
