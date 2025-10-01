@@ -6,7 +6,7 @@ GUI_Converter/
 │   ├── __init__.py
 │   ├── main_tab.py
 │   ├── constants.py
-│   └──  utils.py
+│   └── utils.py
 │
 └── tests/
 │   ├── __init__.py

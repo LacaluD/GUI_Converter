@@ -14,10 +14,12 @@ from PIL.ImageQt import ImageQt
 from UI.constants import *
 
 class Converter():
-    def __init__(self, main_window, sf):
+    def __init__(self, main_window, sf, side_func):
         self.main_window = main_window
         self.conv_tab = sf
+        self.side_func = side_func
         
+        # Values by default
         self.current_file = None
         
         self.converted_output_image = None
@@ -127,9 +129,8 @@ class Converter():
         
         self.main_window.statusBar().showMessage("Finished ffmpeg")
         
-    
+    # Convert audio/video formats
     def _convert_audio_video(self, inp_file, out_file, outpt_format, curr_file_format):
-        # print(f"INP: {inp_file}, OUTP_FILE: {out_file}, OUTP_FORMAT: {outpt_format}, CUR_FILE_FORMAT: {curr_file_format}")
         sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO.copy()
         
         out_file_ext = outpt_format.lower()
@@ -229,6 +230,40 @@ class Converter():
             self.main_window.statusBar().showMessage(f"Successfully saved as: {f}")
         except Exception as e:
             self.main_window.statusBar().showMessage(f"Error while saving image: {str(e)}")
+            
+    # Main convert logic
+    def convert_files(self):
+        try:
+            input_file = self.side_func.current_file
+            target_format = self.conv_tab.drop_down_list.currentText().lower()
+            ext_format = self.side_funcs.extension_format.lower()
+            print(f"Format: {[ext_format]}")
+            
+            # base, _ = os.path.splitext(input_file)
+            output_file = f"untitled{target_format}"
+        except Exception:
+            self.main_window.statusBar().showMessage("Error: There is no file to convert")
+            return
+        
+        # Checking extensions of images
+        try:
+            if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+                self._convert_image(input_file, target_format)
+                
+            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+                self.side_funcs._convert_files(input_file, target_format)
+                
+            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+                self._convert_audio_video(input_file, output_file, target_format, curr_file_format=self.side_funcs.extension_format)
+                
+            else:
+                self.main_window.statusBar().showMessage(f"Convertation {ext_format} -> {target_format} is not supported")
+                return
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+            return
+        
+        self.main_window.statusBar().showMessage("Successfully converted")
     
 
 class Previewer:
@@ -283,6 +318,7 @@ class Previewer:
         self.vid_slider_layout.addWidget(self.current_vid_time)
         self.vid_slider_layout.addWidget(self.video_slider, stretch=1)
         self.vid_slider_layout.addWidget(self.total_vid_time)
+        
         if not self.slider_added:
             self.vid_prev_buttons_layout.addLayout(self.vid_slider_layout)
             self.slider_added = True
@@ -502,6 +538,7 @@ class Previewer:
         seconds = seconds  % 60
         return f"{minutes:02d}:{seconds:02d}"
     
+    # Clear preview title, widgets, layouts
     def clear_vid_preview(self):
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn, 
                                  self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
@@ -533,27 +570,25 @@ class Previewer:
     # Sorting funcs to start right func
     def preview_object(self):
         self.ct = self.convert_tab
+        self.sf = self.side_funcs
         
-        if self.ct.current_file:
-            print(f"Curr file: {self.ct.current_file}, Ext: {self.side_funcs.extension_format}")
-            if self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+        if self.side_funcs.current_file:
+            print(f"Curr file: {self.sf.current_file}, Ext: {self.sf.extension_format}")
+            if self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 self.preview_picture(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
-                                                    prev_label=self.ct.preview_label, curr_file=self.ct.current_file, 
+                                                    prev_label=self.ct.preview_label, curr_file=self.sf.current_file, 
                                                     convert_file=self.converter.converted_output_image)
-                print(self.ct.preview_title, self.ct.preview_info, 
-                    self.ct.preview_label, self.ct.current_file, 
-                    self.converter.converted_output_image)
-            elif self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+            elif self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
                 self.preview_file(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
-                            prev_label=self.ct.preview_label, curr_file=self.ct.current_file)
-            elif self.side_funcs.extension_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+                            prev_label=self.ct.preview_label, curr_file=self.sf.current_file)
+            elif self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
                 self.preview_video(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
-                            prev_label=self.ct.preview_label, curr_file=self.ct.current_file)
+                            prev_label=self.ct.preview_label, curr_file=self.sf.current_file)
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
-                print(self.ct.preview_title, self.ct.preview_info, self.ct.preview_label, self.ct.current_file)
+                print(self.ct.preview_title, self.ct.preview_info, self.ct.preview_label, self.sf.current_file)
                 return
-        elif not self.ct.current_file:
+        elif not self.sf.current_file:
             self.main_window.statusBar().showMessage("Upload file first")
             return
         else:
@@ -572,7 +607,7 @@ class SideMethods():
         self.extension_format = None
         self.preview_label = None
         
-        self.current_file = self.convert_tab.current_file
+        self.current_file = None
         
     # # Automaticly get extension format
     def get_extension_format(self, inpt_f):
@@ -589,7 +624,7 @@ class SideMethods():
             return ext
         
         # # # ext = '.txt'
-        print(self.extension_format)
+        # print(self.extension_format)
         self.convert_tab.format_field.setText(self.extension_format)
         
         self.main_window.statusBar().showMessage("Successfully got format")
@@ -618,7 +653,27 @@ class SideMethods():
             return []
         else:
             return [str(ext_format)]
-
+        
+    # Upload button logic
+    def upload_inpt_file(self):
+        self.main_window.statusBar().showMessage("Upload file clicked")
+        
+        try:
+            file, _ = QFileDialog.getOpenFileName(self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)")
+        except Exception as e:
+            self.main_window.statusBar().showMessage(str(e))
+            
+        if not file:
+            self.main_window.statusBar().showMessage("File is not choosen")
+            return
+        
+        self.current_file = file
+        self.get_extension_format(file)
+        
+        formats = self.get_output_file_format_list()
+        self.convert_tab.drop_down_list.clear()
+        self.convert_tab.drop_down_list.addItems(formats)
+        
         
     # Clear button logic
     def clear_all_fields(self):
@@ -707,7 +762,7 @@ class SideMethods():
         else:
             self.main_window.statusBar().showMessage("Error happened during saving output file")
             
-    
+    # Main convert files logic
     def _convert_files(self, inp_file, outpt_format):
         self.main_window.statusBar().showMessage("Convert files initialized")
 
