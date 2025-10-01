@@ -2,14 +2,14 @@ import os
 import csv
 import json
 import subprocess
-from pathlib import Path
 from PIL import Image
-from PyQt6.QtCore import QUrl, Qt
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PyQt6.QtMultimediaWidgets import QVideoWidget
+from pathlib import Path
 from PIL.ImageQt import ImageQt
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import QUrl, Qt
+from PyQt6.QtMultimediaWidgets import QVideoWidget
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 
 from UI.constants import *
 
@@ -117,7 +117,7 @@ class Converter():
             return msg
         
         command = ['ffmpeg', '-y', '-i', inp, get_filename]
-        print(f"Command for ffmpeg: {command}")
+        # print(f"Command for ffmpeg: {command}")
         
         if ext_out == 'mp4':
             command += ['-c:a', 'aac']
@@ -205,8 +205,6 @@ class Converter():
         extension = convtd_out_img_format.lower()
         ext_for_better_quality = extension.upper()
         ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
-        print(extension, ext_for_better_quality)
-        print(extension, ext_for_better_quality)
         
         try:
             f, _ = QFileDialog.getSaveFileName(self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
@@ -237,7 +235,7 @@ class Converter():
             input_file = self.side_func.current_file
             target_format = self.conv_tab.drop_down_list.currentText().lower()
             ext_format = self.side_funcs.extension_format.lower()
-            print(f"Format: {[ext_format]}")
+            # print(f"Format: {[ext_format]}")
             
             # base, _ = os.path.splitext(input_file)
             output_file = f"untitled{target_format}"
@@ -586,7 +584,6 @@ class Previewer:
                             prev_label=self.ct.preview_label, curr_file=self.sf.current_file)
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
-                print(self.ct.preview_title, self.ct.preview_info, self.ct.preview_label, self.sf.current_file)
                 return
         elif not self.sf.current_file:
             self.main_window.statusBar().showMessage("Upload file first")

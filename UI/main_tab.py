@@ -1,9 +1,8 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
                             QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog)
-from PyQt6.QtCore import Qt
 
 from .utils import Converter, Previewer, SideMethods
-from .constants import *
 
 
 
