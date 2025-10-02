@@ -8,7 +8,7 @@ Project is built for users who want`s to have useful tool to make life easier.
 ## Functional
 - Uploading files to the iface
 - Automatic input file format checker
-- Have couple options to convert your files to
+- Multiple output format option
 - And "Save as" functional (if it`s picture format)
 
 ---
@@ -26,7 +26,7 @@ Project is built for users who want`s to have useful tool to make life easier.
 ### With poetry
 1. poetry install 
 2. poetry run python main.py
-3. poetry show --tree # To check if all dependencies installed correctly
+3. poetry show --tree    # To check if all dependencies installed correctly
 
 ---
 
