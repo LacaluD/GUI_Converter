@@ -266,6 +266,100 @@ class TestMainTab(unittest.TestCase):
             elem.setParent.assert_called_once_with(None)
             elem.deleteLater.assert_called_once()
 
+    
+    # Tests for convertation logic
+    def test_save_converted_file(self):
+        """Test to check save_converted_file with picture file"""
+        self.conv_tab.converter.converted_output_image = "image"
+        self.conv_tab.converter.converted_output_image_format = 'PNG'
         
+        self.conv_tab.converter.save_img = Mock()
+        self.side_funcs.save_converted_file()
+        
+        self.conv_tab.converter.save_img.assert_called_once_with(
+            convtd_out_img_format='PNG',
+            convt_out_img='image'
+        )
+        
+    def test_convert_files_txt_file(self):
+        """Test to check save_converted_file with txt file"""
+        self.side_funcs.extension_format = '.txt'
+        
+        result = self.side_funcs._convert_files('test.txt', 'csv')
+        
+        self.assertEqual(result, [])
+        self.fake_main_window.statusBar.return_value.showMessage.assert_any_call("Cannot convert from .txt file")
+        
+    def test_convert_file_unsopported(self):
+        """Test to check save_converted_file with usupported file format"""
+        self.side_funcs.extension_format = '.test'
+        
+        self.side_funcs._convert_files('test.test', 'json')
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_any_call("Formats are unsupported")
+        
+    def test_convert_csv_to_json(self):
+        """Test to check save_converted_file with csv to json format"""
+        self.side_funcs.extension_format = '.csv'
+        self.conv_tab.converter.convert_csv_json = Mock()
+        
+        self.side_funcs._convert_files('test.csv', 'json')
+        self.conv_tab.converter.convert_csv_json.assert_called_with(inp='test.csv')
+        
+    def test_convert_json_to_csv(self):
+        """Test to check save_converted_file with json to csv format"""
+        self.side_funcs.extension_format = '.json'
+        self.conv_tab.converter.convert_json_csv = Mock()
+        
+        self.side_funcs._convert_files('test.json', 'csv')
+        self.conv_tab.converter.convert_json_csv.assert_called_with(inp='test.json')
+
+    
+    #
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="col1/col2/nval1,val2\n")
+    def test_convert_csv_txt(self, mock_open_file):
+        """Test for convert_csv_to_txt logic"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
+
+        self.conv_tab.converter.convert_csv_txt('test.csv')
+        self.conv_tab.converter.get_save_filename.assert_called_once()
+        
+        mock_open_file.assert_any_call('test.csv', newline='', encoding='utf-8')
+        mock_open_file.assert_any_call('output.txt', 'w', encoding='utf-8')
+        
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting csv to txt")
+        
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
+    def test_convert_json_txt_dict(self, mock_open_file):
+        """Test for convert_json_txt logic"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
+        
+        self.conv_tab.converter.convert_json_txt('test.json')
+        self.conv_tab.converter.get_save_filename.assert_called_once()
+        
+        mock_open_file.assert_any_call('test.json', 'r', encoding='utf-8')
+        mock_open_file.assert_any_call('output.txt', 'w', encoding='utf-8')
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to txt")
+        
+        file_handle = mock_open_file.return_value.__enter__()
+        file_handle.write.assert_any_call('a: 1\n')
+        file_handle.write.assert_any_call('b: 2\n')
+        
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="[1, 2, 3, 4, 5, 6]")
+    def test_convert_json_txt_list(self, mock_open_file):
+        """Test for convert_json_txt logic"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
+        
+        self.conv_tab.converter.convert_json_txt('test.json')
+        self.conv_tab.converter.get_save_filename.assert_called_once()
+        
+        mock_open_file.assert_any_call('test.json', 'r', encoding='utf-8')
+        mock_open_file.assert_any_call('output.txt', 'w', encoding='utf-8')
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to txt")
+    
+    
 if __name__ == '__main__':
     unittest.main()

@@ -51,7 +51,7 @@ class Converter():
             with open(get_filename, 'w', encoding='utf-8') as out_file:
                 if isinstance(reader, list):
                     for item in reader:
-                        if isinstance(reader, dict):
+                        if isinstance(item, dict):
                             for k, v in item.items():
                                 out_file.write(f"{k}: {v}\n")
                             out_file.write('\n')
@@ -237,7 +237,6 @@ class Converter():
             ext_format = self.side_funcs.extension_format.lower()
             # print(f"Format: {[ext_format]}")
             
-            # base, _ = os.path.splitext(input_file)
             output_file = f"untitled{target_format}"
         except Exception:
             self.main_window.statusBar().showMessage("Error: There is no file to convert")
@@ -770,8 +769,8 @@ class SideMethods():
 
         sce_files = [f.lower().lstrip('.') for f in SUPPORTED_CONVERT_EXTENSIONS_FILES]
 
-        if file_ext == ".txt":
-            self.main_window.statusBar().showMessage("Can not convert from txt file")
+        if file_ext == "txt":
+            self.main_window.statusBar().showMessage("Cannot convert from .txt file")
             return []
         
         
@@ -785,4 +784,4 @@ class SideMethods():
             elif file_ext == "json" and out_file_ext == "txt":
                 self.converter.convert_json_txt(inp=inp_file)
         else:
-            self.main_window.statusBar().showMessage(f"Formats are unsupported")
+            self.main_window.statusBar().showMessage("Formats are unsupported")
