@@ -1,5 +1,4 @@
 # Python cache
-__pycache__
 __pycache__/
 *.pyc
 
@@ -36,6 +35,7 @@ logs/
 TODO.md
 PROJECT_GOAL.md
 PROJECT_STRUCTURE.md
+pyproject.toml
 test/
 # tests/
 test_logs/
@@ -50,7 +50,6 @@ content.*
 *.png
 *.jpeg
 *.jpg
-*.txt
 *.json
 *.csv
 *.wav
