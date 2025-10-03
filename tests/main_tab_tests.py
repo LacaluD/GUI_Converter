@@ -16,13 +16,11 @@ from UI.constants import *
 
 
 # Timing decorator for performance logging
-timings = []
 def timing_decorator(func):
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
         result = func(*args, **kwargs)
         final_took_time = time.perf_counter() - start
-        timings.append((func.__name__, final_took_time))
         if final_took_time > 1:
             print(f" WARNING: {func.__name__}: took more than 1.0 second ({final_took_time:.5f})")
         else:
@@ -594,18 +592,162 @@ class TestMainTab(unittest.TestCase):
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=("", ""))
     def test_save_audio_conv_file_cancelled(self, mock_open_file):
-        """Test if Chose dialog was cancelled"""
+        """Test if choose dialog was cancelled"""
         result = self.conv_tab.converter.save_audio_video_conv_file('output.wav')
         self.assertIsNone(result)
 
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", side_effect=Exception("Dialog error"))
     def test_save_audio_conv_file_dialog_error(self, mock_open_file):
-        """"""
+        """Test if any error happens during saving"""
         result = self.conv_tab.converter.save_audio_video_conv_file('output.mp3')
         self.assertIsNone(result)
         
         self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Dialog error")
+        
+    
+    # Tests for save_img dunc for all formats
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('out.jpeg', None))
+    def test_save_img_jpeg(self, mock_open_file):
+        """Test for save image logic. For JPEG format"""
+        mock_img = Mock()
+        
+        self.conv_tab.converter.save_img('jpeg', mock_img)
+        
+        mock_img.save.assert_called_with('out.jpeg', format='jpeg', optimize=True, quality=85, progressive=True)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Successfully saved as: out.jpeg")
+    
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('out.png', None))
+    def test_save_img_png(self, mock_open_file):
+        """Test for save image logic. For PNG format"""
+        mock_img = Mock()
+        
+        self.conv_tab.converter.save_img('png', mock_img)
+        
+        mock_img.save.assert_called_with('out.png', format='png', optimize=True, compress_level=8)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Successfully saved as: out.png")
+    
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('out.webp', None))
+    def test_save_img_webp(self, mock_open_file):
+        """Test for save image logic. For WEBP format"""
+        mock_img = Mock()
+        
+        self.conv_tab.converter.save_img('webp', mock_img)
+        
+        mock_img.save.assert_called_with('out.webp', format='webp', quality=85, lossless=False, method=6)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Successfully saved as: out.webp")
+    
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", side_effect=Exception("Save error"))
+    def test_save_img_save_error(self, mock_open_file):
+        """Test for save image logic. If error happened during saving"""
+        mock_img = Mock()
+        self.conv_tab.converter.save_img('png', mock_img)
+        
+        mock_img.save.assert_not_called()
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Error while saving image: save error")
+        
+        
+    # Test for convert_files method (routing method to convert functions)
+    @timing_decorator
+    def test_convert_files_no_file_to_convert(self):
+        """Test if no file to convert"""
+        self.side_funcs.current_file = None
+        self.conv_tab.converter.convert_files()
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Error: There is no file to convert")
+
+
+
+    # Tests for preview_object method (routing method to preview functions)
+    @timing_decorator
+    def test_preview_object_no_file_uploaded(self):
+        """Test for preview_object function if no file uploaded"""
+        self.side_funcs.current_file = None
+        self.previewer.preview_object()
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Upload file first")
+        
+    @timing_decorator
+    def test_preview_object_unsupported_format(self):
+        """Test for preview_object function if used unsupported file format"""
+        self.side_funcs.current_file = 'test.test'
+        self.side_funcs.extension_format = 'test'
+        self.previewer.preview_object()
+    
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Unsupported file format")
+        
+    @timing_decorator
+    def test_picture_preview_called(self):
+        """Test for preview_object function behavior if function called with images"""
+        self.previewer.preview_picture = Mock()
+        self.previewer.converter.converted_output_image = 'converted.jpeg'
+        
+        self.side_funcs.current_file = 'file.png'
+        self.side_funcs.extension_format = '.png'
+        self.previewer.preview_object()
+        
+        self.previewer.preview_picture.assert_called_once_with(
+            prev_title = self.conv_tab.preview_title,
+            prev_info = self.conv_tab.preview_info,
+            prev_label = self.conv_tab.preview_label,
+            curr_file='file.png',
+            convert_file='converted.jpeg'
+        )
+
+    @timing_decorator
+    def test_file_preview_called(self):
+        """Test for preview_object function behavior if function called with doc-type file"""
+        self.previewer.preview_file = Mock()
+        
+        self.side_funcs.current_file = 'test.json'
+        self.side_funcs.extension_format = '.json'
+        self.previewer.preview_object()
+        
+        self.previewer.preview_file.assert_called_once_with(
+            prev_title = self.conv_tab.preview_title,
+            prev_info = self.conv_tab.preview_info,
+            prev_label = self.conv_tab.preview_label,
+            curr_file='test.json',
+        )
+        
+    @timing_decorator
+    def test_video_preview_called(self):
+        """Test for preview_object function behavior if function called video-type file"""
+        self.previewer.preview_video = Mock()
+        
+        self.side_funcs.current_file = 'test.mp4'
+        self.side_funcs.extension_format = '.mp4'
+        self.previewer.preview_object()
+        
+        self.previewer.preview_video.assert_called_once_with(
+            prev_title = self.conv_tab.preview_title,
+            prev_info = self.conv_tab.preview_info,
+            prev_label = self.conv_tab.preview_label,
+            curr_file='test.mp4',
+        )
+        
+    @timing_decorator
+    def test_audio_preview_called(self):
+        """Test for preview_object function behavior if function called audio-type file"""
+        self.previewer.preview_video = Mock()
+        
+        self.side_funcs.current_file = 'test.wav'
+        self.side_funcs.extension_format = '.wav'
+        self.previewer.preview_object()
+        
+        self.previewer.preview_video.assert_called_once_with(
+            prev_title = self.conv_tab.preview_title,
+            prev_info = self.conv_tab.preview_info,
+            prev_label = self.conv_tab.preview_label,
+            curr_file='test.wav',
+        )
     
 if __name__ == '__main__':
     unittest.main()
