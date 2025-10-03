@@ -1,4 +1,7 @@
 import sys
+import json
+import time
+from pathlib import Path
 
 import unittest
 from unittest.mock import Mock, patch
@@ -12,10 +15,25 @@ from UI.main_tab import ConverterTab
 from UI.constants import *
 
 
-class TestMainTab(unittest.TestCase):
+# Timing decorator for performance logging
+timings = []
+def timing_decorator(func):
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        final_took_time = time.perf_counter() - start
+        timings.append((func.__name__, final_took_time))
+        if final_took_time > 1:
+            print(f" WARNING: {func.__name__}: took more than 1.0 second ({final_took_time:.5f})")
+        else:
+            print(f"{func.__name__}: took {final_took_time:.5f} seconds")
+        return result
+    return wrapper
+
+class TestMainTab(unittest.TestCase):    
     @classmethod
     def setUpClass(cls):
-        cls.app = QApplication(sys.argv)
+        cls.app = QApplication.instance() or QApplication(sys.argv)
 
     def setUp(self):        
         self.fake_main_window = Mock()
@@ -63,6 +81,7 @@ class TestMainTab(unittest.TestCase):
 
 
     # Tests for get_extension_format method
+    @timing_decorator
     def test_get_extension_format(self):
         """ Test for all extension in supported set """
         self.all_sces = set(self.sce_pics + self.sce_files + self.sce_audio_video)
@@ -71,7 +90,7 @@ class TestMainTab(unittest.TestCase):
             result = self.side_funcs.get_extension_format(test_file)
             self.assertIn(result, self.all_sces, f"{result} is not in supported list")
             
-    
+    @timing_decorator
     def test_get_extension_format_no_ext(self):
         """ Test with no extension loaded """
         result = self.side_funcs.get_extension_format('dummyfile')
@@ -79,20 +98,23 @@ class TestMainTab(unittest.TestCase):
 
     
     # Tests for get_output_format_list method
+    @timing_decorator
     def test_get_output_list_picture(self):
         """Test for picture-type file extension"""
         self.side_funcs.extension_format = '.png'
         result = self.side_funcs.get_output_file_format_list()
         self.assertNotIn('.png', result)
         self.assertEqual(set(result), set(SUPPORTED_CONVERT_EXTENSIONS_PICTURES) - {'.png'})
-        
+    
+    @timing_decorator
     def test_get_output_list_file(self):
         """Test for doc-type file extension"""
         self.side_funcs.extension_format = '.csv'
         result = self.side_funcs.get_output_file_format_list()
         self.assertNotIn('.csv', result)
         self.assertEqual(set(result), set(SUPPORTED_CONVERT_EXTENSIONS_FILES) - {'.csv'})
-            
+    
+    @timing_decorator
     def test_get_output_list_video_audio(self):
         """Test for video-type file extension"""
         self.side_funcs.extension_format = '.mp4'
@@ -100,19 +122,22 @@ class TestMainTab(unittest.TestCase):
         self.assertNotIn('.mp4', result)
         self.assertEqual(set(result), set(SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO) - {'.mp4'})
 
+    @timing_decorator
     def test_get_output_list_picture(self):
         """Test for audio-type file extension"""
         self.side_funcs.extension_format = '.wav'
         result = self.side_funcs.get_output_file_format_list()
         self.assertNotIn('.wav', result)
         self.assertEqual(set(result), set(SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO) - {'.wav'})
-        
+    
+    @timing_decorator
     def test_get_output_list_txt(self):
         """Test for txt-type file extension"""
         self.side_funcs.extension_format = '.txt'
         result = self.side_funcs.get_output_file_format_list()
         self.assertEqual(result, [])
-        
+    
+    @timing_decorator
     def test_get_output_list_picture(self):
         """Test for unknown-type file extension"""
         self.side_funcs.extension_format = '.unknown'
@@ -121,6 +146,7 @@ class TestMainTab(unittest.TestCase):
         
         
     # Tests for upload_inpt_file method
+    @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getOpenFileName")
     def test_upload_inpt_file_no_choosen(self, mock_dialog):
         """Test for file not choosen during getOpenFileName"""
@@ -133,7 +159,8 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar().showMessage.assert_called_with("File is not choosen")
         self.assertIsNone(self.side_funcs.current_file)
         self.conv_tab.drop_down_list.addItems.assert_not_called()
-    
+        
+    @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getOpenFileName")
     def test_upload_inpt_file_exception(self, mock_dialog):
         """Test for Dialog Error exception"""
@@ -146,6 +173,7 @@ class TestMainTab(unittest.TestCase):
         
     
     # Tests for clear_all branches method
+    @timing_decorator
     def test_clear_text_preview(self):
         """Test for clear text preview widgets"""
         self.previewer.text_file_prev = Mock(spec=QPlainTextEdit)
@@ -163,7 +191,7 @@ class TestMainTab(unittest.TestCase):
             self.conv_tab.preview_info.show.assert_called()
             self.conv_tab.drop_down_list.clear.assert_called()
 
-        
+    @timing_decorator
     def test_clear_image_preview(self):
         """Test for clear picture preview widgets"""
         self.previewer.new_pixmap = QPixmap()
@@ -180,7 +208,8 @@ class TestMainTab(unittest.TestCase):
             mock_reset.assert_called()
             mock_clear_image.assert_called()
             self.fake_main_window.statusBar().showMessage.assert_any_call("Successfully cleared")
-        
+    
+    @timing_decorator
     def test_clear_video_preview(self):
         """Test for clear video preview widgets"""
         self.previewer.video_preview_widget = QVideoWidget()
@@ -199,7 +228,7 @@ class TestMainTab(unittest.TestCase):
             self.conv_tab.preview_info.show.assert_called()
             self.conv_tab.drop_down_list.clear.assert_called()
 
-        
+    @timing_decorator
     def test_nothing_to_clear(self):
         """Test if nothing to clear"""
         self.previewer.new_pixmap = None
@@ -222,6 +251,7 @@ class TestMainTab(unittest.TestCase):
         
         
     # Tests for all clearing methods
+    @timing_decorator
     def test_reset_current_file(self):
         """Test for reset_current_file method"""
         self.side_funcs.reset_current_file()
@@ -230,6 +260,7 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.format_field.setText.assert_called_with("No file loaded")
         self.conv_tab.preview_label.clear.assert_called()
 
+    @timing_decorator
     def test_clear_file_prev(self):
         """Test for clear_file_prev method"""
         self.side_funcs.clear_file_prev()
@@ -237,6 +268,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.text_file_prev.clear.assert_called()
         self.previewer.text_file_prev.setVisible.assert_called_with(False)
         
+    @timing_decorator
     def test_clear_img_prev(self):
         """Test for clear_img_prev method"""
         self.side_funcs.clear_image_prev()
@@ -246,7 +278,8 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.preview_label.setPixmap.assert_called()
         self.conv_tab.preview_label.repaint.assert_called()
         self.conv_tab.preview_label.clear.assert_called()
-        
+    
+    @timing_decorator
     def test_clear_video_prev(self):
         """Test for clear_vid_preview method"""
         self.previewer.clear_vid_preview()
@@ -268,6 +301,7 @@ class TestMainTab(unittest.TestCase):
 
     
     # Tests for convertation logic
+    @timing_decorator
     def test_save_converted_file(self):
         """Test to check save_converted_file with picture file"""
         self.conv_tab.converter.converted_output_image = "image"
@@ -280,7 +314,8 @@ class TestMainTab(unittest.TestCase):
             convtd_out_img_format='PNG',
             convt_out_img='image'
         )
-        
+    
+    @timing_decorator
     def test_convert_files_txt_file(self):
         """Test to check save_converted_file with txt file"""
         self.side_funcs.extension_format = '.txt'
@@ -289,7 +324,8 @@ class TestMainTab(unittest.TestCase):
         
         self.assertEqual(result, [])
         self.fake_main_window.statusBar.return_value.showMessage.assert_any_call("Cannot convert from .txt file")
-        
+    
+    @timing_decorator
     def test_convert_file_unsopported(self):
         """Test to check save_converted_file with usupported file format"""
         self.side_funcs.extension_format = '.test'
@@ -298,6 +334,7 @@ class TestMainTab(unittest.TestCase):
         
         self.fake_main_window.statusBar.return_value.showMessage.assert_any_call("Formats are unsupported")
         
+    @timing_decorator
     def test_convert_csv_to_json(self):
         """Test to check save_converted_file with csv to json format"""
         self.side_funcs.extension_format = '.csv'
@@ -306,6 +343,7 @@ class TestMainTab(unittest.TestCase):
         self.side_funcs._convert_files('test.csv', 'json')
         self.conv_tab.converter.convert_csv_json.assert_called_with(inp='test.csv')
         
+    @timing_decorator
     def test_convert_json_to_csv(self):
         """Test to check save_converted_file with json to csv format"""
         self.side_funcs.extension_format = '.json'
@@ -315,7 +353,8 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_json_csv.assert_called_with(inp='test.json')
 
     
-    #
+    #Tests for all convertation logic for doc-type files
+    @timing_decorator
     @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="col1/col2/nval1,val2\n")
     def test_convert_csv_txt(self, mock_open_file):
         """Test for convert_csv_to_txt logic"""
@@ -330,6 +369,7 @@ class TestMainTab(unittest.TestCase):
         
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting csv to txt")
         
+    @timing_decorator
     @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
     def test_convert_json_txt_dict(self, mock_open_file):
         """Test for convert_json_txt logic"""
@@ -347,6 +387,7 @@ class TestMainTab(unittest.TestCase):
         file_handle.write.assert_any_call('a: 1\n')
         file_handle.write.assert_any_call('b: 2\n')
         
+    @timing_decorator
     @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="[1, 2, 3, 4, 5, 6]")
     def test_convert_json_txt_list(self, mock_open_file):
         """Test for convert_json_txt logic"""
@@ -360,6 +401,211 @@ class TestMainTab(unittest.TestCase):
         
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to txt")
     
+    @timing_decorator
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="a,b\n1,2\n3,4\n")
+    def test_converter_csv_json(self, mock_open_file):
+        """Tests for convert_csv_json logic"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.json')
+        
+        self.conv_tab.converter.convert_csv_json('test.csv')
+        self.conv_tab.converter.get_save_filename.assert_called_once()
+        
+        mock_open_file.assert_any_call('test.csv', newline='', encoding='utf-8')
+        mock_open_file.assert_any_call('output.json', 'w', encoding='utf-8')
+        
+        file_handle = mock_open_file.return_value.__enter__()
+        
+        expected_data = [
+            {"a":"1", "b":"2"},
+            {"a":"3", "b":"4"}
+        ]
+        
+        written_json = "".join(call.args[0] for call in file_handle.write.call_args_list)
+        self.assertEqual(json.loads(written_json), expected_data)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting csv to json")
+    
+    @timing_decorator
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
+    def test_converted_json_csv(self, mock_open_file):
+        """Tests for convert_json_csv logic"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.csv')
+        
+        self.conv_tab.converter.convert_json_csv('test.json')
+        
+        mock_open_file.assert_any_call('test.json', 'r', encoding='utf-8')
+        mock_open_file.assert_any_call('output.csv', 'w', newline='', encoding='utf-8')
+        
+        file_handle = mock_open_file.return_value.__enter__()
+        
+        write_fields = ''.join(call.args[0] for call in file_handle.write.call_args_list)
+        self.assertIn("a,b", write_fields)
+        self.assertIn("1,2", write_fields)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to csv")
+    
+    @timing_decorator
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="[]")
+    def test_convert_json_csv_empty_list(self, mock_open_file):
+        """Test convert logic if file is empty list"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value='output.csv')
+        self.conv_tab.converter.convert_json_csv('input.json')
+        
+        mock_open_file.assert_any_call('output.csv', 'w', newline='', encoding='utf-8')
+        
+        file_handle = mock_open_file.return_value.__enter__()
+        
+        write_fields = ''.join(call.args[0] for call in file_handle.write.call_args_list)
+        self.assertEqual(write_fields.strip(), '')
+    
+    @timing_decorator
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1}]')
+    def test_convert_json_csv_no_file_choosen(self, mock_file_open):
+        """Test convert logic if file is not choosen"""
+        self.conv_tab.converter.get_save_filename = Mock(return_value=None)
+        self.conv_tab.converter.convert_json_csv('input.csv')
+        
+        mock_file_open.assert_not_called()
+
+        self.fake_main_window.statusBar.return_value.showMessage.assert_called_once()
+        
+    
+    # Tests for audio/video convertation logic
+    @timing_decorator
+    @patch("subprocess.run")
+    @patch.object(Path, 'exists', side_effect=[True, False])
+    def test_convert_audio_video_successfully(self, mock_exists, mock_run):
+        """Test if audio/video convertation was successfully"""
+        self.conv_tab.converter.save_audio_video_conv_file = Mock(return_value='output.mp4')
+        mock_run.return_value = Mock(returncode=0, stderr='')
+        
+        self.conv_tab.converter.convert_audio_formats('input.wav', 'output.mp4')
+        
+        mock_run.assert_called_once()
+        called_cmd = mock_run.call_args[0][0]
+        self.assertIn('ffmpeg', called_cmd[0])
+        self.assertIn('-i', called_cmd)
+        status_bar_calls = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertIn("Finished ffmpeg", status_bar_calls)
+    
+    @timing_decorator
+    @patch("subprocess.run")
+    @patch.object(Path, 'exists', side_effect=[True, True])
+    def test_convert_audio_video_file_already_exists(self, mock_exists, mock_run):
+        """Test convertation logic if file already exists"""
+        self.conv_tab.converter.save_audio_video_conv_file = Mock(return_value='output.mp4')
+        
+        func = self.conv_tab.converter.convert_audio_formats('input.mp3', 'output.mp4')
+        self.assertIn("already exists", func)
+        mock_run.assert_not_called()
+    
+    @timing_decorator
+    @patch("subprocess.run")
+    @patch.object(Path, 'exists', side_effect=[True, False])
+    def test_convert_audio_video_ffmpeg_error(self, mock_exists, mock_run):
+        """Test for audio/video convertation in case of ffmpeg error"""
+        self.conv_tab.converter.save_audio_video_conv_file = Mock(return_value='output.mp4')
+        mock_run.return_value = Mock(returncode=1, stderr='ffmpeg crashed')
+        
+        with self.assertRaises(RuntimeError):
+            self.conv_tab.converter.convert_audio_formats('input.mp3', 'output.mp4')
+            
+    
+    # Tests for convertation logic without ffmpeg
+    @timing_decorator
+    def test_convert_audio_video_unsupported_format(self):
+        """Test if error occurres in _convert_audio_video logic"""
+        self.conv_tab.converter.convert_audio_formats = Mock()
+        self.conv_tab.converter._convert_audio_video('input.mp3', 'test.test', 'test', 'mp3')
+        
+        self.conv_tab.converter.convert_audio_formats.assert_not_called()
+        
+        error_call = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertIn("Got error in _convert_audio_video method", error_call)
+    
+    @timing_decorator
+    def test_convert_audio_video_empty_inputs(self):
+        """Test if input file is empty"""
+        self.conv_tab.converter.convert_audio_formats = Mock()
+        self.conv_tab.converter._convert_audio_video('', '', '', '')
+        self.conv_tab.converter.convert_audio_formats.assert_not_called()
+        
+        error_call = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertIn("Got error in _convert_audio_video method", error_call)
+        
+    
+    # Test for save_filename functional
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test_test.csv', 'Text Files (*.csv)'))
+    def test_get_save_filename_success(self, mock_save_filename):
+        """Test save functional if success"""
+        result = self.conv_tab.converter.get_save_filename('input.csv', 'Text Files (*.csv)')
+        self.assertEqual(result, 'test_test.csv')
+        self.assertEqual(self.conv_tab.converter.doc_file_path, 'test_test.csv')
+        
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('', ''))
+    def test_get_save_filename_cancelled(self, mock_save_filename):
+        """Test save functional if Save dialog is cancelled"""
+        result = self.conv_tab.converter.get_save_filename('input.json', 'Text Files (*.json)')
+        self.assertIsNone(result)
+        
+        message_call = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertIn("Save cancelled", message_call)
+    
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", side_effect=Exception("Dialog error"))
+    def test_get_save_filename_exception(self, mock_get_save_filename):
+        """Test if exception is occurred during save file"""
+        result = self.conv_tab.converter.get_save_filename('input.csv', 'Text Files (*.csv)')
+        self.assertIsNone(result)
+        
+        error_calls = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertIn("Dialog error", error_calls)
+
+
+    # Tests for save_audio_video_conv_file logic
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test.mp4', 'Video Files (*.mp4)'))
+    def test_save_audio_video_conv_file_mp4(self, mock_open_file):
+        """Test successfully input and output video files"""
+        result = self.conv_tab.converter.save_audio_video_conv_file('output.mp4')
+        self.assertEqual(result, 'test.mp4')
+        
+        error_calls = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertNotIn("Save cancelled", error_calls)
+        self.assertTrue(all('error' not in msg.lower() for msg in error_calls))
+              
+        mock_open_file.assert_called_once_with(self.fake_main_window, "Save File as", 'untitled.mp4', "Video Files (*.mp4)")
+    
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test.mp3', "Audio Files (*.mp3 *.wav)"))
+    def test_save_audio_video_conv_file_audio(self, mock_open_file):
+        """Test if successfully input and output audio files"""
+        result = self.conv_tab.converter.save_audio_video_conv_file('output.wav')
+        self.assertEqual(result, 'test.mp3')
+        
+        error_calls = [call.args[0] for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+        self.assertNotIn("Save cancelled", error_calls)
+        self.assertTrue(all('error' not in msg.lower() for msg in error_calls))
+        
+        mock_open_file.assert_called_once_with(self.fake_main_window, "Save File as", 'untitled.wav', "Audio Files (*.mp3 *.wav)")
+        
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=("", ""))
+    def test_save_audio_conv_file_cancelled(self, mock_open_file):
+        """Test if Chose dialog was cancelled"""
+        result = self.conv_tab.converter.save_audio_video_conv_file('output.wav')
+        self.assertIsNone(result)
+
+    @timing_decorator
+    @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", side_effect=Exception("Dialog error"))
+    def test_save_audio_conv_file_dialog_error(self, mock_open_file):
+        """"""
+        result = self.conv_tab.converter.save_audio_video_conv_file('output.mp3')
+        self.assertIsNone(result)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Dialog error")
     
 if __name__ == '__main__':
     unittest.main()

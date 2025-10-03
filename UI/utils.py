@@ -170,7 +170,7 @@ class Converter():
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
             return None
-                
+        
         if not self.doc_file_path:
             self.main_window.statusBar().showMessage("Save cancelled")
             return None
