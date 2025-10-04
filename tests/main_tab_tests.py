@@ -4,7 +4,9 @@ import time
 from pathlib import Path
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open
+
+from PIL import Image
 
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import QUrl
@@ -81,7 +83,7 @@ class TestMainTab(unittest.TestCase):
     # Tests for get_extension_format method
     @timing_decorator
     def test_get_extension_format(self):
-        """ Test for all extension in supported set """
+        """Test for all extension in supported set"""
         self.all_sces = set(self.sce_pics + self.sce_files + self.sce_audio_video)
         for elem in self.all_sces:
             test_file = 'test' + elem
@@ -90,7 +92,7 @@ class TestMainTab(unittest.TestCase):
             
     @timing_decorator
     def test_get_extension_format_no_ext(self):
-        """ Test with no extension loaded """
+        """Test with no extension loaded"""
         result = self.side_funcs.get_extension_format('dummyfile')
         self.assertEqual(result, "no extension")
 
@@ -353,7 +355,7 @@ class TestMainTab(unittest.TestCase):
     
     #Tests for all convertation logic for doc-type files
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="col1/col2/nval1,val2\n")
+    @patch('builtins.open', new_callable=mock_open, read_data="col1/col2/nval1,val2\n")
     def test_convert_csv_txt(self, mock_open_file):
         """Test for convert_csv_to_txt logic"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
@@ -368,7 +370,7 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting csv to txt")
         
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
+    @patch('builtins.open', new_callable=mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
     def test_convert_json_txt_dict(self, mock_open_file):
         """Test for convert_json_txt logic"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
@@ -386,7 +388,7 @@ class TestMainTab(unittest.TestCase):
         file_handle.write.assert_any_call('b: 2\n')
         
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="[1, 2, 3, 4, 5, 6]")
+    @patch('builtins.open', new_callable=mock_open, read_data="[1, 2, 3, 4, 5, 6]")
     def test_convert_json_txt_list(self, mock_open_file):
         """Test for convert_json_txt logic"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.txt')
@@ -400,7 +402,7 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to txt")
     
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="a,b\n1,2\n3,4\n")
+    @patch('builtins.open', new_callable=mock_open, read_data="a,b\n1,2\n3,4\n")
     def test_converter_csv_json(self, mock_open_file):
         """Tests for convert_csv_json logic"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.json')
@@ -424,7 +426,7 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting csv to json")
     
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
+    @patch('builtins.open', new_callable=mock_open, read_data='[{"a":1, "b":2}, {"a":3, "b":4}]')
     def test_converted_json_csv(self, mock_open_file):
         """Tests for convert_json_csv logic"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.csv')
@@ -443,7 +445,7 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with("Finished converting json to csv")
     
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data="[]")
+    @patch('builtins.open', new_callable=mock_open, read_data="[]")
     def test_convert_json_csv_empty_list(self, mock_open_file):
         """Test convert logic if file is empty list"""
         self.conv_tab.converter.get_save_filename = Mock(return_value='output.csv')
@@ -457,7 +459,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(write_fields.strip(), '')
     
     @timing_decorator
-    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='[{"a":1}]')
+    @patch('builtins.open', new_callable=mock_open, read_data='[{"a":1}]')
     def test_convert_json_csv_no_file_choosen(self, mock_file_open):
         """Test convert logic if file is not choosen"""
         self.conv_tab.converter.get_save_filename = Mock(return_value=None)
@@ -748,6 +750,252 @@ class TestMainTab(unittest.TestCase):
             prev_label = self.conv_tab.preview_label,
             curr_file='test.wav',
         )
+        
+    
+    # Tests for support methods
+    @timing_decorator
+    def test_play_vid(self):
+        """Checking if play_vid is calling player.play"""
+        self.previewer.play_vid()
+        self.previewer.player.play.assert_called_once()
+        
+    @timing_decorator
+    def test_pause_vid(self):
+        """Testing if pause_vid is calling player.pause"""
+        self.previewer.pause_vid()
+        self.previewer.player.pause.assert_called_once()
+        
+    @timing_decorator
+    def test_seek_calls_for_set_position(self):
+        """Testing if seek method is calling right"""
+        self.previewer.seek(0)
+        self.previewer.player.setPosition.assert_called_once_with(0)
+        
+    @timing_decorator
+    def test_update_duraion_set_value_and_text(self):
+        """Testing if update_duration updating normaly if all expected inputs are right (range and total_time)"""
+        self.previewer.video_slider = Mock(name='video_slider')
+        timing = 180000
+        expected_time = self.previewer.format_time(timing)
+        
+        self.previewer.update_duration(timing)
+        
+        self.previewer.video_slider.setRange.assert_called_once_with(0, timing)
+        self.previewer.total_vid_time.setText.assert_called_once_with(expected_time)
+        
+    @timing_decorator
+    def test_update_slider_pos_set_range_and_total_text(self):
+        """Testing ifupdate_slide_pos updating normaly if all expected inputs are right (slder and text)"""
+        self.previewer.video_slider = Mock(name='video_slider')
+        duration = 65000
+        expected_time = self.previewer.format_time(duration)
+        
+        self.previewer.update_slider_pos(duration)
+        
+        self.previewer.video_slider.setValue.assert_called_once_with(duration)
+        self.previewer.current_vid_time.setText.assert_called_once_with(expected_time)
+        
+    @timing_decorator
+    def test_format_time_return_correct_vals(self):
+        """Checking if format_time method converts time correctly"""
+        test_cases = [
+            (0, '00:00'),
+            (1_000, '00:01'),
+            (65_000, '01:05'),
+            (122_000, '02:02'),
+            (600_000, '10:00'),
+            (1_000_000, '16:40'),
+            (3_600_000, '60:00')
+        ]
+        
+        for msec, expected in test_cases:
+            with self.subTest(msec=msec):
+                self.assertEqual(self.previewer.format_time(msec), expected)
+                
+    @timing_decorator
+    def test_update_duraion_negative_time_return(self):
+        """Testing if update_duration updating correctly if duration is less than zero"""
+        self.previewer.video_slider = Mock(name='video_slider')
+        self.previewer.update_duration(-1)
+        
+        self.previewer.video_slider.setRange.assert_not_called()
+        self.previewer.total_vid_time.setText.assert_not_called()
+        
+    @timing_decorator
+    def test_update_duraion_negative_time_return(self):
+        """Testing if update_duration updating correctly if duration is called with None"""
+        self.previewer.video_slider = Mock(name='video_slider')
+        self.previewer.update_duration(None)
+        
+        self.previewer.video_slider.setRange.assert_not_called()
+        self.previewer.total_vid_time.setText.assert_not_called()
+        
+    @timing_decorator
+    def test_seek_calls_for_set_position_incorrect_input(self):
+        """Testing if seek method is calling right if duration is str-type or less than 0 or None-type"""
+        invalid_inputs = ['test', -1, None]
+        
+        for elem in invalid_inputs:
+            with self.subTest(invalid=elem):
+                self.previewer.player.setPosition.reset_mock()
+                self.previewer.seek(elem)
+                self.previewer.player.setPosition.assert_called_once_with(0)
+        
+    @timing_decorator
+    def test_format_time_return_correct_vals(self):
+        """Checking if format_time method converts time correctly if msec is less than 0 or it`s str-type or None-type"""
+        invalid_inputs = ['test', -1, None]
+        
+        for elem in invalid_inputs:
+            with self.subTest(invalid=elem):
+                result = self.previewer.format_time(elem)
+                self.assertEqual(result, '00:00')
+    
+    
+    # Tests for oil_to_pixmap convertation method
+    @timing_decorator
+    @patch('UI.utils.QPixmap.fromImage')
+    @patch('UI.utils.ImageQt')
+    def test_pil_to_pixmap_rgba_img(self, mock_imgqt, mock_fromimage):
+        """Test if pil_to_pixmap method works correctly if all inputs are right"""
+        pil_img = Image.new('RGBA', (10, 10))
+        
+        result = self.previewer.pil_to_pixmap(pil_img)
+        
+        self.assertEqual(pil_img.mode, 'RGBA')
+        mock_fromimage.assert_called_once_with(mock_imgqt.return_value)
+        self.assertEqual(result, mock_fromimage.return_value)
+    
+    @timing_decorator
+    @patch('UI.utils.QPixmap.fromImage')
+    @patch('UI.utils.ImageQt')
+    def test_pil_to_pixmap_needs_convert(self, mock_imgqt, mock_fromimage):
+        """Test if pil_to_pixmap method works correctly if Image needs to be converted"""
+        pil_img = Image.new('RGB', (10, 10))
+        pil_img.convert = Mock(wraps=pil_img.convert)
+        
+        result = self.previewer.pil_to_pixmap(pil_img)
+        
+        pil_img.convert.assert_called_once_with('RGBA')
+        mock_fromimage.assert_called_once_with(mock_imgqt.return_value)
+        self.assertEqual(result, mock_fromimage.return_value)
+    
+    @timing_decorator
+    @patch('UI.utils.QPixmap.fromImage')
+    @patch('UI.utils.ImageQt')
+    def test_pil_to_pixmap_invalid_inputs(self, mock_imgqt, mock_fromimage):
+        """Test if pil_to_pixmap method works correctly if input data is invalid"""
+        invalid_inputs = ['test', 1, -1, None, []]
+        
+        for elem in invalid_inputs:
+            with self.subTest(invalid=elem):
+                with self.assertRaises(TypeError):
+                    self.previewer.pil_to_pixmap(elem)
+    
+    
+    # Tests for preview_files method and support methods
+    # Support method: read_convtd_data_from_doc_type_files
+    @timing_decorator
+    @patch('builtins.open', new_callable=mock_open, read_data='{"test": "test"}')
+    def test_read_convtd_data_from_doc_type_files_valid_json(self, mock_open_file):
+        """Test for support method read_convtd_data_from_doc_type_files with valid json file"""
+        fake_file_path = Path("/fake/data.json")
+        self.previewer.read_convtd_data_from_doc_type_files(fake_file_path)
+        
+        mock_open_file.assert_called_once_with(fake_file_path, 'r', encoding='utf-8')
+        self.assertEqual(self.previewer.convtd_file_content, '{"test": "test"}')
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with(f"Got content from: {fake_file_path}")
+        self.assertEqual(self.previewer.last_loaded_file, fake_file_path)
+    
+    @timing_decorator
+    @patch('builtins.open', new_callable=mock_open, read_data="col1,col2\n1,2\n3,4")
+    def test_read_convtd_data_from_doc_type_files_valid_csv(self, mock_open_file):
+        """Test for support method read_convtd_data_from_doc_type_files with valid csv file"""
+        fake_file_path = Path("/fake/data.csv")
+        self.previewer.read_convtd_data_from_doc_type_files(fake_file_path)
+        
+        mock_open_file.assert_called_once_with(fake_file_path, 'r', encoding='utf-8')
+        self.assertEqual(self.previewer.convtd_file_content, "col1,col2\n1,2\n3,4")
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with(f"Got content from: {fake_file_path}")
+        self.assertEqual(self.previewer.last_loaded_file, fake_file_path)
+        
+    @timing_decorator
+    @patch('builtins.open', side_effect=Exception("Invalid JSON"))
+    def test_read_convtd_data_from_doc_type_files_invalid_json(self, mock_open_file):
+        """Test for support method read_convtd_data_from_doc_type_files with invalid json file"""
+        fake_file_path = Path("/fake/data.json")
+        self.previewer.read_convtd_data_from_doc_type_files(fake_file_path)
+        
+        mock_open_file.assert_called_once_with(fake_file_path, 'r', encoding='utf-8')
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Error while getting content")
+    
+    @timing_decorator
+    @patch('builtins.open', side_effect=Exception("Invalid CSV"))
+    def test_read_convtd_data_from_doc_type_files_invalid_csv(self, mock_open_file):
+        """Test for support method read_convtd_data_from_doc_type_files with invalid csv file"""
+        fake_file_path = Path("/fake/data.csv")
+        self.previewer.read_convtd_data_from_doc_type_files(fake_file_path)
+        
+        mock_open_file.assert_called_once_with(fake_file_path, 'r', encoding='utf-8')
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("Error while getting content")
+        
+        
+    # Tests for preview_file method
+    @timing_decorator
+    def test_preview_file_no_file_loaded(self):
+        """Test preview_file logic if no file loaded"""
+        self.previewer.converter.doc_file_path = None
+        self.conv_tab.converter.current_file = None
+        
+        self.previewer.preview_file(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info, 
+                                    prev_label=self.conv_tab.preview_label, curr_file=self.conv_tab.converter.current_file)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("No file loaded")
+        
+    @timing_decorator
+    def test_preview_file_already_loaded(self):
+        """Test preview_file logic if file is already loaded"""
+        fake_file_path = Path("/fake/path/file.txt")
+        self.previewer.last_loaded_file = fake_file_path
+        self.conv_tab.converter.current_file = fake_file_path
+        
+        self.previewer.preview_file(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info, 
+                                    prev_label=self.conv_tab.preview_label, curr_file=self.conv_tab.converter.current_file)
+        
+        self.fake_main_window.statusBar.return_value.showMessage.called_once_with("This file is already loaded")
+        
+    @timing_decorator
+    def test_preview_file_priority_check(self):
+        """Checking if file priority is working properly"""
+        self.previewer.converter.doc_file_path = "/test/output.txt"
+        self.conv_tab.converter.current_file = "/test/current.json"
+        self.previewer.convtd_file_content = "TEST"
+        
+        with patch.object(self.previewer, "read_convtd_data_from_doc_type_files") as mock_read, \
+            patch.object(self.previewer, "show_ui_for_doc_type_files") as mock_show:
+        
+            self.previewer.preview_file(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info, 
+                                        prev_label=self.conv_tab.preview_label, curr_file=self.conv_tab.converter.current_file)
+        
+            mock_read.assert_called_once_with(target_file=Path("/test/output.txt").resolve())
+            mock_show.assert_called_with(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info,
+                                        prev_label=self.conv_tab.preview_label, content="TEST")
+    
+    @timing_decorator
+    def test_preview_file_exception_stops_ui(self):
+        """Test preview_file if read_convtd_data_from_doc_type_files got exception"""
+        self.previewer.converter.doc_file_path = None
+        self.conv_tab.converter.current_file = "/test/current.json"
+    
+        with patch.object(self.previewer, "read_convtd_data_from_doc_type_files", side_effect=Exception('fail')), \
+            patch.object(self.previewer, "show_ui_for_doc_type_files") as mock_show:
+                with self.assertRaises(Exception):
+                    self.previewer.preview_file(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info,
+                                        prev_label=self.conv_tab.preview_label, curr_file=self.conv_tab.converter.current_file)
+                    mock_show.assert_not_called()
+                    
+
+    #
     
 if __name__ == '__main__':
     unittest.main()

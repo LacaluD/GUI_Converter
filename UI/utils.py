@@ -329,8 +329,6 @@ class Previewer:
     
     # Preview files logic
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
-        content = None
-        
         self.output_file = getattr(self.converter, 'doc_file_path', None)
         if self.output_file:
             self.output_file = Path(self.output_file).resolve()
@@ -351,49 +349,18 @@ class Previewer:
             self.main_window.statusBar().showMessage("This file is already loaded")
             return
 
-        # Reading converted data from doc-type files                
-        try:
-            with open(target_file, 'r', encoding='utf-8') as file:
-                content = file.read()
-            self.main_window.statusBar().showMessage(f"Got contentent from: {target_file}")
-            self.last_loaded_file = target_file
-        except Exception as e:
-            self.main_window.statusBar().showMessage("Error while getting content")
-            return
-        
-        # Showing up the UI with loaded doc-type-file
-        try:
-            if not self.text_file_prev:
-                self.text_file_prev = QPlainTextEdit()
-                self.text_file_prev.setReadOnly(True)
-            
-                parent_layout = prev_label.parent().layout()
-                parent_layout.addWidget(self.text_file_prev)
-                
-                prev_title.hide()
-                prev_info.hide()
-                prev_label.hide()
-                
-            self.text_file_prev.setPlainText(content)
-            self.text_file_prev.show()
-                
-        except Exception as e:
-            self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
-            return
+        # Read converted data from doc-type files
+        self.read_convtd_data_from_doc_type_files(target_file=target_file)
 
+        # Show up the UI with loaded doc-type-file
+        self.show_ui_for_doc_type_files(prev_title=prev_title, prev_info=prev_info, 
+                                        prev_label=prev_label, content=self.convtd_file_content)
     
+
     # Preview Pictures
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
-        # Giving hash-id for current running picture
-        if convert_file:
-            self.new_pixmap = self.pil_to_pixmap(convert_file)
-            identifier = f"Converted_{hash(convert_file.tobytes())}"
-        elif curr_file:
-            self.new_pixmap = QPixmap(curr_file)
-            identifier = curr_file
-        else:
-            self.main_window.statusBar().showMessage("No file loaded")
-            return
+        # Give hash-id for current running picture
+        identifier = self.get_hashid_for_picture(convert_file=convert_file, curr_file=curr_file)
         
         # Checking if exists
         if not curr_file or not Path(curr_file).exists():
@@ -410,29 +377,11 @@ class Previewer:
             self.main_window.statusBar().showMessage("Failed to load image")
             return
         
-        # Setting up the UI
-        prev_title.hide()
-        prev_info.hide()
-        
-        prev_label.setPixmap(self.new_pixmap)
-        prev_label.repaint()
-        
-        self.current_pixmap_id = identifier
-        self.current_pixmap = self.new_pixmap
-        
-        msg = curr_file if curr_file else "converted image"
-        self.main_window.statusBar().showMessage(f"Successfully loaded image: {msg}")
+        # Set up the UI
+        self.setup_ui_preview_picture(prev_title=prev_title, prev_info=prev_info, 
+                                    prev_label=prev_label, identifier=identifier, curr_file=curr_file)
 
-    
-    # Convert image to QPixmap object
-    def pil_to_pixmap(self, pil_img):
-        if pil_img.mode != 'RGBA':
-            pil_img = pil_img.convert('RGBA')
-        qt_image = ImageQt(pil_img)
-        pixmap = QPixmap.fromImage(qt_image)
-        return pixmap
-        
-        
+
     # Preview video
     def preview_video(self, prev_title, prev_info, prev_label, curr_file):
         file_to_play = None
@@ -511,7 +460,7 @@ class Previewer:
             return
     
     
-    # Support methods
+    # Support methods for preview_video
     def play_vid(self):
         self.player.play()
     
@@ -523,17 +472,26 @@ class Previewer:
         self.current_vid_time.setText(self.format_time(position))
         
     def update_duration(self, duration):
+        if duration is None or duration < 0:
+            duration = 0
+            self.main_window.statusBar().showMessage("Error while getting duration of the video")
+            return
         self.video_slider.setRange(0, duration)
         self.total_vid_time.setText(self.format_time(duration))
         
     def seek(self, position):
+        if not isinstance(position, (int, float)) or position < 0:
+            position=0
         self.player.setPosition(position)
         
     def format_time(self, msec):
+        if not isinstance(msec, (int, float)) or msec < 0:
+            msec = 0
         seconds = msec // 1000
         minutes = seconds // 60
         seconds = seconds  % 60
         return f"{minutes:02d}:{seconds:02d}"
+    
     
     # Clear preview title, widgets, layouts
     def clear_vid_preview(self):
@@ -564,13 +522,89 @@ class Previewer:
             return
         
         
+    # Help funcs for preview_file method
+    def read_convtd_data_from_doc_type_files(self, target_file):
+        # Reading converted data from doc-type files
+        self.convtd_file_content = None
+        try:
+            with open(target_file, 'r', encoding='utf-8') as file:
+                self.convtd_file_content = file.read()
+            self.main_window.statusBar().showMessage(f"Got contentent from: {target_file}")
+            self.last_loaded_file = target_file
+        except Exception as e:
+            self.main_window.statusBar().showMessage("Error while getting content")
+            return
+        
+    def show_ui_for_doc_type_files(self, prev_title, prev_info, prev_label, content):
+        # Showing up the UI with loaded doc-type-file
+        try:
+            if not self.text_file_prev:
+                self.text_file_prev = QPlainTextEdit()
+                self.text_file_prev.setReadOnly(True)
+            
+                parent_layout = prev_label.parent().layout()
+                parent_layout.addWidget(self.text_file_prev)
+                
+                prev_title.hide()
+                prev_info.hide()
+                prev_label.hide()
+                
+            self.text_file_prev.setPlainText(content)
+            self.text_file_prev.show()
+                
+        except Exception as e:
+            self.main_window.statusBar().showMessage(f"Failed to load file: {str(e)}")
+            return
+        
+        
+    # Help method for preview_picture
+    def get_hashid_for_picture(self, convert_file, curr_file):
+        if convert_file:
+            self.new_pixmap = self.pil_to_pixmap(convert_file)
+            identifier = f"Converted_{hash(convert_file.tobytes())}"
+        elif curr_file:
+            self.new_pixmap = QPixmap(curr_file)
+            identifier = curr_file
+            return identifier
+        else:
+            self.main_window.statusBar().showMessage("No file loaded")
+            return
+    
+    def setup_ui_preview_picture(self, prev_title, prev_info, prev_label, identifier, curr_file):
+        # Setting up the UI
+        prev_title.hide()
+        prev_info.hide()
+        
+        prev_label.setPixmap(self.new_pixmap)
+        prev_label.repaint()
+        
+        self.current_pixmap_id = identifier
+        self.current_pixmap = self.new_pixmap
+        
+        msg = curr_file if curr_file else "converted image"
+        self.main_window.statusBar().showMessage(f"Successfully loaded image: {msg}")
+        
+    
+    # Convert image to QPixmap object
+    def pil_to_pixmap(self, pil_img):
+        if not isinstance(pil_img, Image.Image):
+            raise TypeError(f"Expected PIL.Image object, got {type(pil_img).__name__}")
+        
+        if pil_img.mode != 'RGBA':
+            pil_img = pil_img.convert('RGBA')
+            
+        qt_image = ImageQt(pil_img)
+        pixmap = QPixmap.fromImage(qt_image)
+        return pixmap
+    
+        
     # Sorting funcs to start right func
     def preview_object(self):
         self.ct = self.convert_tab
         self.sf = self.side_funcs
         
         if self.side_funcs.current_file:
-            print(f"Curr file: {self.sf.current_file}, Ext: {self.sf.extension_format}")
+            # print(f"Curr file: {self.sf.current_file}, Ext: {self.sf.extension_format}")
             if self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
                 self.preview_picture(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info, 
                                                     prev_label=self.ct.preview_label, curr_file=self.sf.current_file, 
