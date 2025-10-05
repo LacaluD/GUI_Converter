@@ -384,7 +384,6 @@ class Previewer:
 
     # Preview video
     def preview_video(self, prev_title, prev_info, prev_label, curr_file):
-        file_to_play = None
         self.current_vid_source = None
         
         # Check if file exists
@@ -402,55 +401,39 @@ class Previewer:
             return
         
         if curr_file.lower().endswith(('.mp4', '.mp3', '.wav')):
-            try:                
-                try:
-                    # Getting the parent layout widget
-                    parent_layout = prev_label.parent().layout()
-                    
-                    # Hiding previous titles
-                    prev_title.hide()
-                    prev_info.hide()
-                    prev_label.hide()
-                    
-                    # Creating QVideoWidget if it wasn't created
-                    if not hasattr(self, 'video_preview_widget'):
-                        self.video_preview_widget = QVideoWidget(prev_label.parent())
-                        self.player.setVideoOutput(self.video_preview_widget)
-                        parent_layout.addWidget(self.video_preview_widget)
+            try:
+                # Getting the parent layout widget
+                parent_layout = prev_label.parent().layout()
+                
+                # Hiding previous titles
+                prev_title.hide()
+                prev_info.hide()
+                prev_label.hide()
+                
+                # Creating QVideoWidget if it wasn't created
+                if not hasattr(self, 'video_preview_widget'):
+                    self.video_preview_widget = QVideoWidget(prev_label.parent())
+                    self.player.setVideoOutput(self.video_preview_widget)
+                    parent_layout.addWidget(self.video_preview_widget)
 
-                    # Check the file to play
-                    if curr_file and not self.output_video:
-                        file_to_play = curr_file
-                    elif not curr_file and self.output_video:
-                        file_to_play = self.output_video
-                    elif curr_file and self.output_video:
-                        file_to_play = self.output_video
-                    else:
-                        self.main_window.statusBar().showMessage("No file loaded")
+                # Check file to play
+                file_to_play = self.check_file_to_play(curr_file=curr_file)
 
-                    # Updating current video source
-                    self.current_vid_source = self.player.source().toLocalFile()
-                    
-                    # Checking to do not dublicate video players
-                    if file_to_play == self.current_vid_source:
-                        self.main_window.statusBar().showMessage("Audio player already exists with this file")
-                        return
+                # Updating current video source
+                self.current_vid_source = self.player.source().toLocalFile()
+                
+                # Checking to do not dublicate video players
+                if file_to_play == self.current_vid_source:
+                    self.main_window.statusBar().showMessage("Audio player already exists with this file")
+                    return
 
-                    # Trying to set output video/audio file for video/audio player
-                    try:
-                        self.player.setSource(QUrl.fromLocalFile(file_to_play))
-                        self.main_window.statusBar().showMessage(f"Playing: {file_to_play}")
-                    except (FileNotFoundError, TypeError):
-                        self.main_window.statusBar().showMessage("Check filename or file path")
-                        return
+                # Trying to set output video/audio file for video/audio player
+                self.set_up_video_audio_output(file_to_play=file_to_play)
 
-                    # Checking to do not dublicate UI buttons
-                    if not self.buttons_layout_added:
-                        parent_layout.addLayout(self.vid_prev_buttons_layout)
-                        self.buttons_layout_added = True
-                    
-                except Exception as e:
-                    self.main_window.statusBar().showMessage(f"Error: {str(e)}")
+                # Checking to do not dublicate UI buttons
+                if not self.buttons_layout_added:
+                    parent_layout.addLayout(self.vid_prev_buttons_layout)
+                    self.buttons_layout_added = True
                 
             except Exception as e:
                 self.main_window.statusBar().showMessage(f"Error: {str(e)}")
@@ -458,7 +441,7 @@ class Previewer:
         else:
             self.main_window.statusBar().showMessage("Unexpected error during loading video")
             return
-    
+
     
     # Support methods for preview_video
     def play_vid(self):
@@ -529,7 +512,7 @@ class Previewer:
         try:
             with open(target_file, 'r', encoding='utf-8') as file:
                 self.convtd_file_content = file.read()
-            self.main_window.statusBar().showMessage(f"Got contentent from: {target_file}")
+            self.main_window.statusBar().showMessage(f"Got content from: {target_file}")
             self.last_loaded_file = target_file
         except Exception as e:
             self.main_window.statusBar().showMessage("Error while getting content")
@@ -596,6 +579,32 @@ class Previewer:
         qt_image = ImageQt(pil_img)
         pixmap = QPixmap.fromImage(qt_image)
         return pixmap
+    
+    
+        # Trying to set output video/audio file for video/audio player
+    def set_up_video_audio_output(self, file_to_play):
+        try:
+            self.player.setSource(QUrl.fromLocalFile(file_to_play))
+            self.main_window.statusBar().showMessage(f"Playing: {file_to_play}")
+        except (FileNotFoundError, TypeError):
+            self.main_window.statusBar().showMessage("Check filename or file path")
+            return
+        
+    # Check file to play
+    def check_file_to_play(self, curr_file):
+        file_to_play = None
+        
+        if curr_file and not self.output_video:
+            file_to_play = curr_file
+            return file_to_play
+        elif not curr_file and self.output_video:
+            file_to_play = self.output_video
+            return file_to_play
+        elif curr_file and self.output_video:
+            file_to_play = self.output_video
+            return file_to_play
+        else:
+            self.main_window.statusBar().showMessage("No file loaded")
     
         
     # Sorting funcs to start right func
