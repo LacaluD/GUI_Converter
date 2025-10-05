@@ -10,7 +10,7 @@ Project is built for users who want`s to have useful tool to make life easier.
 - Automatic input file format checker
 - Multiple output format option
 - And "Save as" functional (if it`s picture format)
-- App with almost 100 unit-tests
+- GUI-App with almost 100 unit-tests
 
 ---
 
