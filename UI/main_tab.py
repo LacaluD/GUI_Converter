@@ -1,4 +1,5 @@
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, 
                             QFrame, QComboBox, QLineEdit, QSizePolicy, QDialog)
 
@@ -174,4 +175,22 @@ class ConverterTab(QWidget):
     def get_combobox_list_elems(self):
         items = [self.drop_down_list.itemText(i) for i in range(self.drop_down_list.count())]
         return items
-    
+
+
+class AboutTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        app_name_layout = QHBoxLayout()
+        self.app_name = QLabel("GUI Converter")
+        
+        app_name_font = QFont()
+        app_name_font.setFamily('Arial')
+        app_name_font.setPointSize(20)
+        app_name_font.setBold(True)
+        app_name_font.setItalic(True)
+        
+        app_name_layout.addWidget(self.app_name, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
+        
+        self.setFont(app_name_font)
+        self.setLayout(app_name_layout)

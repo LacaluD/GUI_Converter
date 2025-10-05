@@ -43,7 +43,7 @@ GUI_Converter/
 │
 └── tests/                  # test folder
 │   ├── __init__.py
-│   ├── main_tab_tests.py   # Main tab tests
+│   └── main_tab_tests.py   # Main tab tests
 │
 ├── main.py                 # entry module
 ├── .gitignore              # Git ignore file

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QMainWindow, QTabWidget, QVB
 from PyQt6.QtCore import QSize
 import sys
 
-from UI.main_tab import ConverterTab
+from UI.main_tab import ConverterTab, AboutTab
 
 
 class MainWindow(QMainWindow):
@@ -21,10 +21,7 @@ class MainWindow(QMainWindow):
         # Creating tabs
         main_tab1 = ConverterTab(self)
         
-        tab2_info = QWidget()
-        tab2_info_layout = QVBoxLayout()
-        tab2_info_layout.addWidget(QLabel("Some info about developer"))
-        tab2_info.setLayout(tab2_info_layout)
+        tab2_info = AboutTab()
 
         # Adding tabs to QTabWidgets
         tabs.addTab(main_tab1, "Main")
