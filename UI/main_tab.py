@@ -181,16 +181,98 @@ class AboutTab(QWidget):
     def __init__(self):
         super().__init__()
         
-        app_name_layout = QHBoxLayout()
+        # Creating VBox and setup all needed widgets
+        app_name_layout = QVBoxLayout()
+        
         self.app_name = QLabel("GUI Converter")
-        
-        app_name_font = QFont()
-        app_name_font.setFamily('Arial')
-        app_name_font.setPointSize(20)
-        app_name_font.setBold(True)
+        app_name_font = QFont('Arial', 25, QFont.Weight.Bold)
         app_name_font.setItalic(True)
+        self.app_name.setFont(app_name_font)
+        self.app_name.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        app_name_layout.addWidget(self.app_name, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
+        self.app_version = QLabel('0.0.1')
+        app_version_font = QFont('Arial', 16)
+        app_version_font.setItalic(True)
+        self.app_version.setFont(app_version_font)
+        self.app_version.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.app_version.setStyleSheet("color: gray;")
         
-        self.setFont(app_name_font)
-        self.setLayout(app_name_layout)
+        # Adding widgets to the layout
+        app_name_layout.addWidget(self.app_name)
+        app_name_layout.addWidget(self.app_version)
+        
+        # Layout should be in the top and horizontal centered
+        app_name_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        
+        about_text_info = (
+            "This is a tool for converting doc-type files, images, "
+            "audio and video files with preview window for all of the formats.\n"
+            "Project is built for users who want`s to have useful tool to make life easier."
+        )
+        
+        about_text = QLabel(about_text_info)
+        about_text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        about_text.setStyleSheet("font-size: 15px; color: #333;")
+        about_text.setWordWrap(True)
+        
+        # Create and load Changelog
+        change_log = QLabel('Changelog')
+        change_log_font = QFont('Arial', 20, QFont.Weight.Bold)
+        change_log_font.setItalic(True)
+        change_log.setFont(change_log_font)
+        change_log.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        
+        self.change_log_text = QLabel(
+            " • Created GUI-interface for the app \n"
+            " • Added more extensions to convert \n"
+            " • Window to preview input objects or converted one \n"
+            " • Fixed small bugs with convertation logic \n"
+            # " • "
+        )
+        
+        self.change_log_text.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.change_log_text.setStyleSheet("font-size: 15px; color: #333;")
+        self.change_log_text.setWordWrap(True)
+        
+        
+        self.author_info_text = QLabel(
+        '<span style="font-size:15px;">'
+        '<b>Author:</b> '
+        '<a href="https://github.com/LacaluD" style="color:#007ACC; text-decoration:underline;">LacaluD</a><br>'
+        '<b>Project link:</b> '
+        '<a href="https://github.com/LacaluD/GUI_Converter" style="color:#007ACC; text-decoration:underline;">GitHub Repository</a>'
+        '</span>'
+        )
+        
+        self.author_info_text.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.author_info_text.setOpenExternalLinks(True)
+        self.author_info_text.setWordWrap(True)
+        
+        # Separating lines
+        separating_line1 = QFrame()
+        separating_line1.setFrameShape(QFrame.Shape.HLine)
+        separating_line1.setStyleSheet("color: #ccc")
+        
+        separating_line2 = QFrame()
+        separating_line2.setFrameShape(QFrame.Shape.HLine)
+        separating_line2.setStyleSheet("color: #ccc")
+        
+        # Seting up main layout with all existing widgets and layout
+        main_layout = QVBoxLayout()
+        main_layout.addLayout(app_name_layout)
+        main_layout.addSpacing(10)
+        main_layout.addWidget(about_text)
+        main_layout.addWidget(separating_line1)
+        main_layout.addSpacing(10)
+        main_layout.addWidget(change_log)
+        main_layout.addSpacing(10)
+        main_layout.addWidget(self.change_log_text)
+        main_layout.addWidget(separating_line2)
+        main_layout.addStretch(1)
+        main_layout.addWidget(self.author_info_text)
+        
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        
+        self.setLayout(main_layout)
+        
+        
