@@ -1,5 +1,5 @@
-# Main_tab - module for creating main interface on PyQt6
-# Containing class ConverterTab, AboutTab and class logic
+"""Main_tab - module for creating main interface on PyQt6
+Containing class ConverterTab, AboutTab and class logic"""
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
@@ -43,6 +43,7 @@ class ConverterTab(QWidget):
         self.converter.side_funcs = self.side_funcs
 
     def init_layouts(self):
+        """Initializing layouts"""
         self.layout = QVBoxLayout()
         self.buttons_layout = QHBoxLayout()
 
@@ -210,10 +211,16 @@ class AboutTab(QWidget):
     """AboutTab initializing and showing all needed widgets"""
     def __init__(self):
         super().__init__()
+        
+        self.init_vbox_layout()
+        self.setup_all_needed_widgets()
 
-        # Creating VBox and setup all needed widgets
-        app_name_layout = QVBoxLayout()
+    def init_vbox_layout(self):
+        """Creating VBox"""
+        self.app_name_layout = QVBoxLayout()
 
+    def setup_all_needed_widgets(self):
+        """Setup all needed widgets"""
         self.app_name = QLabel("GUI Converter")
         app_name_font = QFont('Arial', 25, QFont.Weight.Bold)
         app_name_font.setItalic(True)
@@ -228,11 +235,11 @@ class AboutTab(QWidget):
         self.app_version.setStyleSheet("color: gray;")
 
         # Adding widgets to the layout
-        app_name_layout.addWidget(self.app_name)
-        app_name_layout.addWidget(self.app_version)
+        self.app_name_layout.addWidget(self.app_name)
+        self.app_name_layout.addWidget(self.app_version)
 
         # Layout should be in the top and horizontal centered
-        app_name_layout.setAlignment(
+        self.app_name_layout.setAlignment(
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         about_text_info = (
@@ -292,7 +299,7 @@ class AboutTab(QWidget):
 
         # Seting up main layout with all existing widgets and layout
         main_layout = QVBoxLayout()
-        main_layout.addLayout(app_name_layout)
+        main_layout.addLayout(self.app_name_layout)
         main_layout.addSpacing(10)
         main_layout.addWidget(about_text)
         main_layout.addWidget(separating_line1)

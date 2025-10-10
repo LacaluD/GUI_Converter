@@ -1,9 +1,11 @@
+"""Module with all help classes and methods"""
+
 import os
 import csv
 import json
 import subprocess
 from pathlib import Path
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from PIL.ImageQt import ImageQt
 
 from PyQt6.QtGui import QPixmap
@@ -12,7 +14,8 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 
-from ui.constants import *
+from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
+                        SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO, PIC_EXTENSION_MAP)
 
 
 class Converter():
@@ -24,12 +27,16 @@ class Converter():
 
         # Values by default
         self.current_file = None
+        
+        self.doc_file_path = None
+        self.video_file_path = None
 
         self.converted_output_image = None
         self.converted_output_image_format = None
 
-    # from csv to txt
+
     def convert_csv_txt(self, inp):
+        """Convertation logic from csv to txt"""
         get_filename = self.get_save_filename(
             'untitled.txt', "Text Files (*.txt)")
         if not get_filename:
@@ -45,7 +52,7 @@ class Converter():
 
 
     def convert_json_txt(self, inp):
-        # convertation logic from json to txt
+        """Convertation logic from json to txt"""
         get_filename = self.get_save_filename(
             'untitled.txt', "Text Files (*.txt)")
         if not get_filename:
@@ -70,11 +77,11 @@ class Converter():
         self.main_window.statusBar().showMessage("Finished converting json to txt")
 
     def convert_csv_json(self, inp):
-        # convertation logic from csv to json
+        """Convertation logic from csv to json"""
         get_filename = self.get_save_filename(
             'untitled.json', "Text Files (*.json)")
         if not get_filename:
-            return
+            return None
 
         with open(inp, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
@@ -85,7 +92,7 @@ class Converter():
             self.main_window.statusBar().showMessage("Finished converting csv to json")
 
     def convert_json_csv(self, inp):
-        # convertation logic from json to csv
+        """Convertation logic from json to csv"""
         get_filename = self.get_save_filename(
             'untitled.csv', "Text Files (*.csv)")
         if not get_filename:
@@ -95,7 +102,7 @@ class Converter():
             data = json.load(in_file)
 
         if not isinstance(data, list):
-            return ValueError("JSON must be valid")
+            raise ValueError("JSON must be valid")
 
         fieldnames = data[0].keys() if data else []
 
@@ -107,7 +114,7 @@ class Converter():
             self.main_window.statusBar().showMessage("Finished converting json to csv")
 
     def convert_audio_formats(self, inp, out):
-        """convertation logic for audio formats"""
+        """Convertation logic for audio formats"""
         inp_full_path = Path(inp)
         out_full_path = Path(out)
         ext_out = out_full_path.suffix.lower().lstrip('.')
@@ -129,12 +136,11 @@ class Converter():
         if ext_out == 'mp4':
             command += ['-c:a', 'aac']
 
-        try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
-        except subprocess.CalledProcessError as e:
-            print("FFMPEG ERROR:", e.stderr)
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        if result.returncode != 0:
+            self.main_window.statusBar().showMessage(f"FFMPEG ERROR: {result.stderr}")
             raise RuntimeError(
-                f"Error FFMPEG Failed witd code {e.returncode}")
+                f"Error FFMPEG Failed witd code {result.returncode}")
 
         self.main_window.statusBar().showMessage("Finished ffmpeg")
 
@@ -154,14 +160,15 @@ class Converter():
         self.main_window.statusBar().showMessage(f"File saved to: {out_file}")
 
     def _convert_image(self, input_file, target_format):
-        # convertation logic for images
+        """Convertation logic for images"""
         try:
             img = Image.open(input_file)
             clean_format = target_format.lstrip('.').upper()
             real_format = PIC_EXTENSION_MAP.get(clean_format)
 
             if not real_format:
-                return self.main_window.statusBar().showMessage(f"Format {target_format} is not supported")
+                return self.main_window.statusBar().showMessage(
+                    f"Format {target_format} is not supported")
 
             converted_img = img.convert('RGB') if real_format in (
                 'JPEG', 'JPG', 'WEBP') else img.copy()
@@ -170,18 +177,16 @@ class Converter():
             self.converted_output_image_format = real_format
             return converted_img
 
-        except Exception as e:
+        except UnidentifiedImageError:
+            return self.main_window.statusBar().showMessage("Can not open image file")
+        except OSError as e:
             return self.main_window.statusBar().showMessage(str(e))
 
-    # Universal func to save file and return filepath
 
     def get_save_filename(self, default_name, filters):
-        try:
-            self.doc_file_path, _ = QFileDialog.getSaveFileName(
-                self.main_window, "Save File as", default_name, filters)
-        except Exception as e:
-            self.main_window.statusBar().showMessage(str(e))
-            return None
+        """Universal func to save file and return filepath"""
+        self.doc_file_path, _ = QFileDialog.getSaveFileName(
+            self.main_window, "Save File as", default_name, filters)
 
         if not self.doc_file_path:
             self.main_window.statusBar().showMessage("Save cancelled")
@@ -189,10 +194,9 @@ class Converter():
 
         return self.doc_file_path
 
-    # Method to save converted audio or video file
 
     def save_audio_video_conv_file(self, out):
-        # Method for saving audio_vido converted file
+        """Method to save audio_vido converted file"""
         ext = Path(out).suffix.lower().lstrip('.')
 
         if ext == "mp4":
@@ -200,12 +204,9 @@ class Converter():
         else:
             filters = "Audio Files (*.mp3 *.wav)"
 
-        try:
-            self.video_file_path, _ = QFileDialog.getSaveFileName(
-                self.main_window, "Save File as", f"untitled.{ext}", filters)
-        except Exception as e:
-            self.main_window.statusBar().showMessage(str(e))
-            return None
+        self.video_file_path, _ = QFileDialog.getSaveFileName(
+            self.main_window, "Save File as", f"untitled.{ext}", filters)
+
 
         if not self.video_file_path:
             self.main_window.statusBar().showMessage("Save cancelled")
@@ -213,20 +214,15 @@ class Converter():
 
         return self.video_file_path
 
-    # Save func for images
 
     def save_img(self, convtd_out_img_format, convt_out_img):
-        # Saving image logic
+        """Saving image logic"""
         extension = convtd_out_img_format.lower()
         ext_for_better_quality = extension.upper()
         ext_filters = "Images (*.png *.jpg *.jpeg *.webp)"
 
-        try:
-            f, _ = QFileDialog.getSaveFileName(
-                self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
-        except Exception as e:
-            self.main_window.statusBar().showMessage(str(e))
-            return
+        f, _ = QFileDialog.getSaveFileName(
+            self.main_window, "Save Image As", f"untitled.{extension}", ext_filters)
 
         if not f:
             self.main_window.statusBar().showMessage("Save cancelled")
@@ -251,27 +247,26 @@ class Converter():
                 f"Error while saving image: {str(e)}")
 
     def convert_files(self):
-        # Main convert logic
-        try:
-            input_file = self.side_func.current_file
-            target_format = self.conv_tab.drop_down_list.currentText().lower()
-            ext_format = self.side_funcs.extension_format.lower()
-            # print(f"Format: {[ext_format]}")
+        """Main convert logic"""
+        input_file = self.side_func.current_file
+        target_format = self.conv_tab.drop_down_list.currentText().lower()
+        ext_format = self.side_funcs.extension_format.lower()
+        # print(f"Format: {[ext_format]}")
 
-            output_file = f"untitled{target_format}"
-        except Exception:
-            self.main_window.statusBar().showMessage("Error: There is no file to convert")
-            return
+        output_file = f"untitled{target_format}"
 
         # Checking extensions of images
         try:
-            if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
+            if (ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES
+                and target_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES):
                 self._convert_image(input_file, target_format)
 
-            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
+            elif (ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES
+                  and target_format in SUPPORTED_CONVERT_EXTENSIONS_FILES):
                 self.side_funcs._convert_files(input_file, target_format)
 
-            elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+            elif (ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
+                  and target_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO):
                 self._convert_audio_video(
                     input_file, output_file, target_format, curr_file_format=self.side_funcs.extension_format)
 
@@ -279,7 +274,7 @@ class Converter():
                 self.main_window.statusBar().showMessage(
                     f"Convertation {ext_format} -> {target_format} is not supported")
                 return
-        except Exception as e:
+        except (FileNotFoundError, PermissionError, OSError, RuntimeError) as e:
             self.main_window.statusBar().showMessage(f"Error: {str(e)}")
             return
 
@@ -294,8 +289,13 @@ class Previewer:
         self.convert_tab = conv_tab
         self.side_funcs = side_funcs
 
-        # Initializing some attributes before using in class methods
-        self.player = QMediaPlayer()
+        self.init_all_default_attributes()
+        self.init_all_ui_elements_needed()
+        self.setup_all_widgets_needed()
+
+
+    def init_all_default_attributes(self):
+        """Initializing some attributes before using in class methods"""
         self.video_preview_widget = None
         self.output_video = None
         self.output_file = None
@@ -312,12 +312,16 @@ class Previewer:
         self.new_pixmap = None
         self.current_pixmap = None
         self.current_pixmap_id = None
-        
+
         self.ct = None
         self.sf = None
 
-        # Creating UI elements for Video/audio Preview
-        # Creating Buttons
+        
+    def init_all_ui_elements_needed(self):
+        """Creating UI elements for Video/audio Preview.
+        Creating Buttons"""
+        self.player = QMediaPlayer()
+        
         self.play_btn = QPushButton('Play ')
         self.play_btn.clicked.connect(self.play_vid)
         self.pause_btn = QPushButton('Pause ')
@@ -341,6 +345,8 @@ class Previewer:
         self.player.durationChanged.connect(self.update_duration)
         self.video_slider.sliderMoved.connect(self.seek)
 
+    def setup_all_widgets_needed(self):
+        """Add all widgets to layouts"""
         self.vid_slider_layout = QHBoxLayout()
         self.vid_slider_layout.addWidget(self.current_vid_time)
         self.vid_slider_layout.addWidget(self.video_slider, stretch=1)
@@ -468,7 +474,7 @@ class Previewer:
                     parent_layout.addLayout(self.vid_prev_buttons_layout)
                     self.buttons_layout_added = True
 
-            except Exception as e:
+            except (AttributeError, RuntimeError, TypeError, ValueError, OSError) as e:
                 self.main_window.statusBar().showMessage(f"Error: {str(e)}")
 
         else:
@@ -487,6 +493,7 @@ class Previewer:
         self.player.pause()
 
     def update_slider_pos(self, position):
+        """Update slider postion method"""
         self.video_slider.setValue(position)
         self.current_vid_time.setText(self.format_time(position))
 
@@ -519,7 +526,7 @@ class Previewer:
     def clear_vid_preview(self):
         """Clear preview title, widgets, layouts"""
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn,
-                                 self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
+            self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
         try:
             self.player.stop()
             self.player.setVideoOutput(None)
@@ -542,10 +549,9 @@ class Previewer:
 
             self.player.disconnect()
         except Exception:
-            return
-
+            self.main_window.statusBar().showMessage("Error while clearing video preview")
+            
     # Help funcs for preview_file method
-
     def read_convtd_data_from_doc_type_files(self, target_file):
         """Reading converted data from doc-type files"""
         
@@ -555,9 +561,9 @@ class Previewer:
             self.main_window.statusBar().showMessage(
                 f"Got content from: {target_file}")
             self.last_loaded_file = target_file
-        except Exception as e:
-            self.main_window.statusBar().showMessage("Error while getting content")
-            return
+        except (FileNotFoundError, PermissionError, UnicodeDecodeError) as e:
+            self.main_window.statusBar().showMessage(f"Error while getting content: {str(e)}")
+            return False
 
     def show_ui_for_doc_type_files(self, prev_title, prev_info, prev_label, content):
         """Showing up the UI with loaded doc-type-file"""
@@ -576,10 +582,10 @@ class Previewer:
             self.text_file_prev.setPlainText(content)
             self.text_file_prev.show()
 
-        except Exception as e:
+        except (AttributeError, RuntimeError, ValueError) as e:
             self.main_window.statusBar().showMessage(
                 f"Failed to load file: {str(e)}")
-            return
+            return False
 
 
     def get_hashid_for_picture(self, convert_file, curr_file):
@@ -593,8 +599,9 @@ class Previewer:
             return identifier
         else:
             self.main_window.statusBar().showMessage("No file loaded")
-            return
+            return False
 
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
     def setup_ui_preview_picture(self, prev_title, prev_info, prev_label, identifier, curr_file):
         """Setting up the UI"""
         prev_title.hide()
@@ -613,7 +620,7 @@ class Previewer:
     def pil_to_pixmap(self, pil_img):
         """Convert image to QPixmap object"""
         if not isinstance(pil_img, Image.Image):
-            raise TypeError(
+            return TypeError(
                 f"Expected PIL.Image object, got {type(pil_img).__name__}")
 
         if pil_img.mode != 'RGBA':
@@ -660,15 +667,18 @@ class Previewer:
         if self.side_funcs.current_file:
             # print(f"Curr file: {self.sf.current_file}, Ext: {self.sf.extension_format}")
             if self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
-                self.preview_picture(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info,
-                                     prev_label=self.ct.preview_label, curr_file=self.sf.current_file,
-                                     convert_file=self.converter.converted_output_image)
+                self.preview_picture(prev_title=self.ct.preview_title, 
+                    prev_info=self.ct.preview_info, 
+                    prev_label=self.ct.preview_label, curr_file=self.sf.current_file,
+                    convert_file=self.converter.converted_output_image)
             elif self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_FILES:
-                self.preview_file(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info,
-                                  prev_label=self.ct.preview_label, curr_file=self.sf.current_file)
+                self.preview_file(prev_title=self.ct.preview_title,
+                    prev_info=self.ct.preview_info, prev_label=self.ct.preview_label,
+                    curr_file=self.sf.current_file)
             elif self.sf.extension_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
-                self.preview_video(prev_title=self.ct.preview_title, prev_info=self.ct.preview_info,
-                                   prev_label=self.ct.preview_label, curr_file=self.sf.current_file)
+                self.preview_video(prev_title=self.ct.preview_title,
+                    prev_info=self.ct.preview_info,prev_label=self.ct.preview_label,
+                    curr_file=self.sf.current_file)
             else:
                 self.main_window.statusBar().showMessage("Unsupported file format")
                 return
@@ -742,11 +752,8 @@ class SideMethods():
         self.main_window.statusBar().showMessage("Upload file clicked")
         file = None
 
-        try:
-            file, _ = QFileDialog.getOpenFileName(
-                self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)")
-        except Exception as e:
-            self.main_window.statusBar().showMessage(str(e))
+        file, _ = QFileDialog.getOpenFileName(
+            self.main_window, "Select File", "", "Files (*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)")
 
         if not file:
             self.main_window.statusBar().showMessage("File is not choosen")
@@ -785,7 +792,6 @@ class SideMethods():
             self.main_window.statusBar().showMessage("Successfully cleared")
         else:
             self.main_window.statusBar().showMessage("Nothing to clear")
-            return
 
         self.convert_tab.preview_title.show()
         self.convert_tab.preview_info.show()
@@ -798,8 +804,8 @@ class SideMethods():
             self.current_file = None
             self.convert_tab.format_field.setText("No file loaded")
             self.convert_tab.preview_label.clear()
-        except Exception:
-            return
+        except (AttributeError, RuntimeError):
+            self.main_window.statusBar().showMessage("Error during deleting current file")
 
 
     def clear_file_prev(self):
@@ -807,8 +813,8 @@ class SideMethods():
         try:
             self.previewer.text_file_prev.clear()
             self.previewer.text_file_prev.setVisible(False)
-        except Exception:
-            return
+        except (AttributeError, RuntimeError):
+            self.main_window.statusBar().showMessage("Error during clearing current text layout")
 
     def clear_image_prev(self):
         """Clear image preview"""
@@ -818,8 +824,8 @@ class SideMethods():
             self.convert_tab.preview_label.setPixmap(QPixmap())
             self.convert_tab.preview_label.clear()
             self.convert_tab.preview_label.repaint()
-        except Exception:
-            return
+        except (AttributeError, RuntimeError):
+            self.main_window.statusBar().showMessage("Error during clearing image preview")
 
 
     def save_converted_file(self):
@@ -848,7 +854,7 @@ class SideMethods():
 
         elif not sf_conv_out_img or not sf_conv_out_img_form:
             self.main_window.statusBar().showMessage("No converted file to save")
-            return
+            return False
 
         else:
             self.main_window.statusBar().showMessage(

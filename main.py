@@ -1,3 +1,5 @@
+"""Main entry"""
+
 import sys
 
 from PyQt6.QtWidgets import (
@@ -7,7 +9,9 @@ from PyQt6.QtCore import QSize
 from ui.main_tab import ConverterTab, AboutTab
 
 
-class MainWindow(QMainWindow):
+# pylint: disable=too-few-public-methods
+class MainWindow(QMainWindow): 
+    """Initializing MainWindow class"""
     def __init__(self):
         super().__init__()
 
@@ -34,7 +38,7 @@ class MainWindow(QMainWindow):
 
 
     def on_tab_changed(self, index, tabs, status_bar):
-        # Updating page status
+        """Updating page status"""
         tab_name = tabs.tabText(index)
         status_bar.showMessage(f"Switched to: '{tab_name}' tab")
 
