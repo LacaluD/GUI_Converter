@@ -16,6 +16,7 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 
+# pylint: disable=import-error
 from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
                           SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO, PIC_EXTENSION_MAP)
 

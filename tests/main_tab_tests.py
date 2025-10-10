@@ -21,7 +21,9 @@ from PyQt6.QtCore import QUrl
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
+# pylint: disable=import-error
 from ui.main_tab import ConverterTab
+# pylint: disable=import-error
 from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
                           SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO)
 
@@ -389,8 +391,8 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_json_csv.assert_called_with(
             inp='test.json')
 
-    # Tests for all convertation logic for doc-type files
 
+    # Tests for all convertation logic for doc-type files
     @timing_decorator
     @patch('builtins.open', new_callable=mock_open, read_data="col1/col2/nval1,val2\n")
     def test_convert_csv_txt(self, mock_open_file):
@@ -424,7 +426,6 @@ class TestMainTab(unittest.TestCase):
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with(
             "Finished converting json to txt")
 
-        # file_handle = mock_open_file.return_value.__enter__()
         file_handle = mock_open_file.return_value
         file_handle.write.assert_any_call('a: 1\n')
         file_handle.write.assert_any_call('b: 2\n')
