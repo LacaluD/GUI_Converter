@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget)
 from PyQt6.QtCore import QSize
 
-from UI.main_tab import ConverterTab, AboutTab
+from ui.main_tab import ConverterTab, AboutTab
 
 
 class MainWindow(QMainWindow):
@@ -32,8 +32,9 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(tabs)
 
-    # Updating page status
+
     def on_tab_changed(self, index, tabs, status_bar):
+        # Updating page status
         tab_name = tabs.tabText(index)
         status_bar.showMessage(f"Switched to: '{tab_name}' tab")
 

@@ -13,8 +13,8 @@ from PyQt6.QtCore import QUrl
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
-from UI.main_tab import ConverterTab
-from UI.constants import *
+from ui.main_tab import ConverterTab
+from ui.constants import *
 
 
 # Timing decorator for performance logging
@@ -82,13 +82,12 @@ class TestMainTab(unittest.TestCase):
         self.sce_audio_video = SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO
         self.all_sces = set(
             self.sce_pics + self.sce_files + self.sce_audio_video)
-        
+
     # Tests for get_extension_format method
 
     @timing_decorator
     def test_get_extension_format(self):
         """Test for all extension in supported set"""
-        
         for elem in self.all_sces:
             test_file = 'test' + elem
             result = self.side_funcs.get_extension_format(test_file)
@@ -131,7 +130,7 @@ class TestMainTab(unittest.TestCase):
             SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO) - {'.mp4'})
 
     @timing_decorator
-    def test_get_output_list_picture(self):
+    def test_get_output_list_audio_video(self):
         """Test for audio-type file extension"""
         self.side_funcs.extension_format = '.wav'
         result = self.side_funcs.get_output_file_format_list()
@@ -147,7 +146,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(result, [])
 
     @timing_decorator
-    def test_get_output_list_picture(self):
+    def test_get_output_list_unknown(self):
         """Test for unknown-type file extension"""
         self.side_funcs.extension_format = '.unknown'
         result = self.side_funcs.get_output_file_format_list()
@@ -509,7 +508,7 @@ class TestMainTab(unittest.TestCase):
     @timing_decorator
     @patch("subprocess.run")
     @patch.object(Path, 'exists', side_effect=[True, False])
-    def test_convert_audio_video_successfully(self, mock_exists, mock_run):
+    def test_convert_audio_video_successfully(self, _mock_exists, mock_run):
         """Test if audio/video convertation was successfully"""
         self.conv_tab.converter.save_audio_video_conv_file = Mock(
             return_value='output.mp4')
@@ -529,7 +528,7 @@ class TestMainTab(unittest.TestCase):
     @timing_decorator
     @patch("subprocess.run")
     @patch.object(Path, 'exists', side_effect=[True, True])
-    def test_convert_audio_video_file_already_exists(self, mock_exists, mock_run):
+    def test_convert_audio_video_file_already_exists(self, _mock_exists, mock_run):
         """Test convertation logic if file already exists"""
         self.conv_tab.converter.save_audio_video_conv_file = Mock(
             return_value='output.mp4')
@@ -542,7 +541,7 @@ class TestMainTab(unittest.TestCase):
     @timing_decorator
     @patch("subprocess.run")
     @patch.object(Path, 'exists', side_effect=[True, False])
-    def test_convert_audio_video_ffmpeg_error(self, mock_exists, mock_run):
+    def test_convert_audio_video_ffmpeg_error(self, _mock_exists, mock_run):
         """Test for audio/video convertation in case of ffmpeg error"""
         self.conv_tab.converter.save_audio_video_conv_file = Mock(
             return_value='output.mp4')
@@ -582,7 +581,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test_test.csv', 'Text Files (*.csv)'))
-    def test_get_save_filename_success(self, mock_save_filename):
+    def test_get_save_filename_success(self, _mock_save_filename):
         """Test save functional if success"""
         result = self.conv_tab.converter.get_save_filename(
             'input.csv', 'Text Files (*.csv)')
@@ -592,7 +591,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('', ''))
-    def test_get_save_filename_cancelled(self, mock_save_filename):
+    def test_get_save_filename_cancelled(self, _mock_save_filename):
         """Test save functional if Save dialog is cancelled"""
         result = self.conv_tab.converter.get_save_filename(
             'input.json', 'Text Files (*.json)')
@@ -604,7 +603,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", side_effect=Exception("Dialog error"))
-    def test_get_save_filename_exception(self, mock_get_save_filename):
+    def test_get_save_filename_exception(self, _mock_get_save_filename):
         """Test if exception is occurred during save file"""
         result = self.conv_tab.converter.get_save_filename(
             'input.csv', 'Text Files (*.csv)')
@@ -915,7 +914,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.total_vid_time.setText.assert_not_called()
 
     @timing_decorator
-    def test_update_duraion_negative_time_return(self):
+    def test_update_duraion_none_type_return(self):
         """Testing if update_duration updating correctly if duration is called with None"""
         self.previewer.video_slider = Mock(name='video_slider')
         self.previewer.update_duration(None)
@@ -976,7 +975,7 @@ class TestMainTab(unittest.TestCase):
     @timing_decorator
     @patch('UI.utils.QPixmap.fromImage')
     @patch('UI.utils.ImageQt')
-    def test_pil_to_pixmap_invalid_inputs(self, mock_imgqt, mock_fromimage):
+    def test_pil_to_pixmap_invalid_inputs(self, _mock_imgqt, _mock_fromimage):
         """Test if pil_to_pixmap method works correctly if input data is invalid"""
         invalid_inputs = ['test', 1, -1, None, []]
 
@@ -1185,7 +1184,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=False)
-    def test_preview_video_method_no_input(self, mock_exists):
+    def test_preview_video_method_no_input(self, _mock_exists):
         """Test preview_video method if no input file loaded"""
         self.previewer.preview_video(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info,
                                      prev_label=self.conv_tab.preview_label, curr_file='fake.mp4')
@@ -1196,7 +1195,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_video_method_help_methods_calls(self, mock_exists):
+    def test_preview_video_method_help_methods_calls(self, _mock_exists):
         """Test preview_video method if needed help methods are called"""
         self.previewer.check_file_to_play = Mock()
         self.previewer.set_up_video_audio_output = Mock()
@@ -1213,7 +1212,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_video_method_unsupported_filetype(self, mock_exists):
+    def test_preview_video_method_unsupported_filetype(self, _mock_exists):
         """Test preview_video method if unsupported file type loaded"""
         self.previewer.preview_video(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info,
                                      prev_label=self.conv_tab.preview_label, curr_file='fake.txt')
@@ -1224,7 +1223,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_video_method_file_already_exists(self, mock_exists):
+    def test_preview_video_method_file_already_exists(self, _mock_exists):
         """Test preview_video method if loading file already exists"""
         self.previewer.player.source().toLocalFile = Mock(return_value='fake.mp4')
         self.previewer.check_file_to_play = Mock(return_value='fake.mp4')
@@ -1253,7 +1252,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=False)
-    def test_preview_picture_file_not_exists(self, mock_exists):
+    def test_preview_picture_file_not_exists(self, _mock_exists):
         """Test preview_picture method if loading file dont exists"""
         self.previewer.preview_picture(prev_title=self.conv_tab.preview_title, prev_info=self.conv_tab.preview_info,
                                        prev_label=self.conv_tab.preview_label, curr_file='fake.png', convert_file=None)
@@ -1264,7 +1263,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_picture_file_duplicate(self, mock_exists):
+    def test_preview_picture_file_duplicate(self, _mock_exists):
         """Test preview_picture method if user trying to load duplicated file"""
         self.previewer.current_pixmap_id = '123'
         self.previewer.new_pixmap = Mock()
@@ -1281,7 +1280,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_picture_file_is_null(self, mock_exists):
+    def test_preview_picture_file_is_null(self, _mock_exists):
         """Test preview_picture method if loading file is Null"""
         self.previewer.current_pixmap_id = '123'
         self.previewer.new_pixmap = Mock()
@@ -1295,7 +1294,7 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
-    def test_preview_picture_success_review(self, mock_exists):
+    def test_preview_picture_success_review(self, _mock_exists):
         """Test preview_picture method with all needed arguments"""
         self.previewer.new_pixmap = Mock()
         self.previewer.current_pixmap_id = 'some_id'

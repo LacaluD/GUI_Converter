@@ -18,7 +18,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
-        pip install PyQt6
+        pip install pillow
+        pip install pyqt6
+        pip install pyqt6-sip
+        pip install pyqt6-stubs
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
@@ -31,4 +34,4 @@ jobs:
       with:
         bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
-        message: 'Build failed!'
+        message: 'Build failed\!'

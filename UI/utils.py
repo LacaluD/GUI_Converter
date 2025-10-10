@@ -12,10 +12,11 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PyQt6.QtWidgets import QPlainTextEdit, QPushButton, QHBoxLayout, QSlider, QLabel, QFileDialog
 
-from UI.constants import *
+from ui.constants import *
 
 
 class Converter():
+    """Converter class logic"""
     def __init__(self, main_window, sf, side_func):
         self.main_window = main_window
         self.conv_tab = sf
@@ -88,7 +89,7 @@ class Converter():
         get_filename = self.get_save_filename(
             'untitled.csv', "Text Files (*.csv)")
         if not get_filename:
-            return
+            return None
 
         with open(inp, 'r', encoding='utf-8') as in_file:
             data = json.load(in_file)
@@ -106,14 +107,14 @@ class Converter():
             self.main_window.statusBar().showMessage("Finished converting json to csv")
 
     def convert_audio_formats(self, inp, out):
-        # convertation logic for audio formats
+        """convertation logic for audio formats"""
         inp_full_path = Path(inp)
         out_full_path = Path(out)
         ext_out = out_full_path.suffix.lower().lstrip('.')
 
         get_filename = self.save_audio_video_conv_file(f"untitled.{ext_out}")
         if not get_filename:
-            return
+            return None
 
         if not inp_full_path.exists():
             raise FileNotFoundError(f"Input file is not found: {inp}")
@@ -128,11 +129,12 @@ class Converter():
         if ext_out == 'mp4':
             command += ['-c:a', 'aac']
 
-        result = subprocess.run(command, capture_output=True, text=True)
-        if result.returncode != 0:
-            print("FFMPEG ERROR: ", result.stderr)
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as e:
+            print("FFMPEG ERROR:", e.stderr)
             raise RuntimeError(
-                f"Error FFMPEG Failed witd code {result.returncode}")
+                f"Error FFMPEG Failed witd code {e.returncode}")
 
         self.main_window.statusBar().showMessage("Finished ffmpeg")
 
@@ -285,6 +287,7 @@ class Converter():
 
 
 class Previewer:
+    """Previewer class logic"""
     def __init__(self, main_window, converter, conv_tab, side_funcs):
         self.main_window = main_window
         self.converter = converter
@@ -354,8 +357,9 @@ class Previewer:
         self.vid_prev_buttons_layout.addWidget(self.pause_btn)
         self.vid_prev_buttons_layout.addSpacing(5)
 
-    # Preview files logic
+
     def preview_file(self, prev_title, prev_info, prev_label, curr_file):
+        """Preview files logic"""
         self.output_file = getattr(self.converter, 'doc_file_path', None)
         if self.output_file:
             self.output_file = Path(self.output_file).resolve()
@@ -382,9 +386,9 @@ class Previewer:
         self.show_ui_for_doc_type_files(prev_title=prev_title, prev_info=prev_info,
                                         prev_label=prev_label, content=self.convtd_file_content)
 
-    # Preview Pictures
 
     def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
+        """Preview picture logic"""
         # Give hash-id for current running picture
         identifier = self.get_hashid_for_picture(
             convert_file=convert_file, curr_file=curr_file)
@@ -406,11 +410,11 @@ class Previewer:
 
         # Set up the UI
         self.setup_ui_preview_picture(prev_title=prev_title, prev_info=prev_info,
-                                      prev_label=prev_label, identifier=identifier, curr_file=curr_file)
+            prev_label=prev_label, identifier=identifier, curr_file=curr_file)
 
-    # Preview video
 
     def preview_video(self, prev_title, prev_info, prev_label, curr_file):
+        """Preview video logic"""
         self.current_vid_source = None
 
         # Check if file exists
@@ -475,9 +479,11 @@ class Previewer:
     # Support methods for preview_video
 
     def play_vid(self):
+        """Play video method"""
         self.player.play()
 
     def pause_vid(self):
+        """Pause video method"""
         self.player.pause()
 
     def update_slider_pos(self, position):
@@ -485,6 +491,7 @@ class Previewer:
         self.current_vid_time.setText(self.format_time(position))
 
     def update_duration(self, duration):
+        """Update duration method"""
         if duration is None or duration < 0:
             duration = 0
             self.main_window.statusBar().showMessage(
@@ -494,11 +501,13 @@ class Previewer:
         self.total_vid_time.setText(self.format_time(duration))
 
     def seek(self, position):
+        """Seek postion method"""
         if not isinstance(position, (int, float)) or position < 0:
             position = 0
         self.player.setPosition(position)
 
     def format_time(self, msec):
+        """Formating time method"""
         if not isinstance(msec, (int, float)) or msec < 0:
             msec = 0
         seconds = msec // 1000
@@ -506,9 +515,9 @@ class Previewer:
         seconds = seconds % 60
         return f"{minutes:02d}:{seconds:02d}"
 
-    # Clear preview title, widgets, layouts
 
     def clear_vid_preview(self):
+        """Clear preview title, widgets, layouts"""
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn,
                                  self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
         try:
@@ -538,7 +547,7 @@ class Previewer:
     # Help funcs for preview_file method
 
     def read_convtd_data_from_doc_type_files(self, target_file):
-        # Reading converted data from doc-type files
+        """Reading converted data from doc-type files"""
         
         try:
             with open(target_file, 'r', encoding='utf-8') as file:
@@ -551,7 +560,7 @@ class Previewer:
             return
 
     def show_ui_for_doc_type_files(self, prev_title, prev_info, prev_label, content):
-        # Showing up the UI with loaded doc-type-file
+        """Showing up the UI with loaded doc-type-file"""
         try:
             if not self.text_file_prev:
                 self.text_file_prev = QPlainTextEdit()
@@ -572,9 +581,9 @@ class Previewer:
                 f"Failed to load file: {str(e)}")
             return
 
-    # Help method for preview_picture
 
     def get_hashid_for_picture(self, convert_file, curr_file):
+        """Help method for preview_picture"""
         if convert_file:
             self.new_pixmap = self.pil_to_pixmap(convert_file)
             identifier = f"Converted_{hash(convert_file.tobytes())}"
@@ -587,7 +596,7 @@ class Previewer:
             return
 
     def setup_ui_preview_picture(self, prev_title, prev_info, prev_label, identifier, curr_file):
-        # Setting up the UI
+        """Setting up the UI"""
         prev_title.hide()
         prev_info.hide()
 
@@ -601,9 +610,8 @@ class Previewer:
         self.main_window.statusBar().showMessage(
             f"Successfully loaded image: {msg}")
 
-    # Convert image to QPixmap object
-
     def pil_to_pixmap(self, pil_img):
+        """Convert image to QPixmap object"""
         if not isinstance(pil_img, Image.Image):
             raise TypeError(
                 f"Expected PIL.Image object, got {type(pil_img).__name__}")
@@ -615,9 +623,9 @@ class Previewer:
         pixmap = QPixmap.fromImage(qt_image)
         return pixmap
 
-        # Trying to set output video/audio file for video/audio player
 
     def set_up_video_audio_output(self, file_to_play):
+        """Trying to set output video/audio file for video/audio player"""
         try:
             self.player.setSource(QUrl.fromLocalFile(file_to_play))
             self.main_window.statusBar().showMessage(
@@ -626,25 +634,26 @@ class Previewer:
             self.main_window.statusBar().showMessage("Check filename or file path")
             return
 
-    # Check file to play
     def check_file_to_play(self, curr_file):
+        """Check file to play"""
         file_to_play = None
 
         if curr_file and not self.output_video:
             file_to_play = curr_file
             return file_to_play
-        elif not curr_file and self.output_video:
+        if not curr_file and self.output_video:
             file_to_play = self.output_video
             return file_to_play
-        elif curr_file and self.output_video:
+        if curr_file and self.output_video:
             file_to_play = self.output_video
             return file_to_play
         else:
             self.main_window.statusBar().showMessage("No file loaded")
+            return None
 
 
     def preview_object(self):
-            # Sorting funcs to start right func
+        """Sorting funcs to start right func"""
         self.ct = self.convert_tab
         self.sf = self.side_funcs
 
@@ -672,6 +681,7 @@ class Previewer:
 
 
 class SideMethods():
+    """Side methods logic"""
     def __init__(self, main_window, converter, conv_tab):
         self.main_window = main_window
         self.converter = converter
@@ -684,7 +694,7 @@ class SideMethods():
         self.current_file = None
 
     def get_extension_format(self, inpt_f):
-        # Automaticly get extension format
+        """Automaticly get extension format"""
         self.main_window.statusBar().showMessage("get ext format func started")
 
         try:
@@ -703,7 +713,7 @@ class SideMethods():
 
 
     def get_output_file_format_list(self):
-        # Get output list info for QComboBox
+        """Get output list info for QComboBox"""
         self.main_window.statusBar().showMessage("get output file format")
 
         ext_format = self.extension_format
@@ -715,20 +725,20 @@ class SideMethods():
         if ext_format in SUPPORTED_CONVERT_EXTENSIONS_PICTURES:
             sce_pictures_copy.remove(ext_format)
             return sce_pictures_copy
-        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and ext_format != '.txt':
+        if ext_format in SUPPORTED_CONVERT_EXTENSIONS_FILES and ext_format != '.txt':
             sce_files_copy.remove(ext_format)
             return sce_files_copy
-        elif ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
+        if ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
             sce_videos_copy.remove(ext_format)
             return sce_videos_copy
-        elif ext_format == '.txt':
+        if ext_format == '.txt':
             return []
         else:
             return [str(ext_format)]
 
     
     def upload_inpt_file(self):
-        # Upload button logic
+        """Upload button logic"""
         self.main_window.statusBar().showMessage("Upload file clicked")
         file = None
 
@@ -751,7 +761,7 @@ class SideMethods():
 
 
     def clear_all_fields(self):
-        # Clear button logic
+        """Clear button logic"""
         self.main_window.statusBar().showMessage("Clear all clicked")
         cleared = False
         p = self.previewer
@@ -783,7 +793,7 @@ class SideMethods():
 
 
     def reset_current_file(self):
-        # Delete current file
+        """Delete current file"""
         try:
             self.current_file = None
             self.convert_tab.format_field.setText("No file loaded")
@@ -793,7 +803,7 @@ class SideMethods():
 
 
     def clear_file_prev(self):
-        # Clear text layout
+        """Clear text layout"""
         try:
             self.previewer.text_file_prev.clear()
             self.previewer.text_file_prev.setVisible(False)
@@ -801,7 +811,7 @@ class SideMethods():
             return
 
     def clear_image_prev(self):
-        # Clear image preview
+        """Clear image preview"""
         try:
             self.previewer.current_pixmap = None
             self.previewer.current_pixmap_id = None
@@ -813,7 +823,7 @@ class SideMethods():
 
 
     def save_converted_file(self):
-        # Save as button logic
+        """Save as button logic"""
         c = self.converter
         sf_conv_out_img = self.converter.converted_output_image
         sf_conv_out_img_form = self.converter.converted_output_image_format
@@ -846,7 +856,7 @@ class SideMethods():
 
     
     def _convert_files(self, inp_file, outpt_format):
-        # Main convert files logic
+        """Main convert files logic"""
         self.main_window.statusBar().showMessage("Convert files initialized")
 
         file_ext = self.extension_format.lower().lstrip('.')

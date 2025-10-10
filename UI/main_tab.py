@@ -10,33 +10,44 @@ from .utils import Converter, Previewer, SideMethods
 
 
 class ConverterTab(QWidget):
+    """ConvertTab initializing and showing all needed widgets"""
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
 
         # Values by default
         self.preview_label = None
-
         self.converter = None
         self.previewer = None
         self.side_funcs = None
 
-        # Creating instances of the classes
+        self.init_classes()
+        self.init_layouts()
+        self.init_buttons()
+        self.setup_widgets_to_layout()
+        self.init_frame()
+        self.init_box_layout()
+        self.init_preview_area()
+
+    def init_classes(self):
+        """Creating instances of the classes"""
         self.side_funcs = SideMethods(conv_tab=self, main_window=self.main_window,
-                                      converter=None)
+                                    converter=None)
         self.converter = Converter(
             sf=self, main_window=self.main_window, side_func=self.side_funcs)
         self.side_funcs.converter = self.converter
         self.previewer = Previewer(conv_tab=self, main_window=self.main_window,
-                                   converter=self.converter, side_funcs=self.side_funcs)
+                                converter=self.converter, side_funcs=self.side_funcs)
 
         self.side_funcs.previewer = self.previewer
         self.converter.side_funcs = self.side_funcs
 
+    def init_layouts(self):
         self.layout = QVBoxLayout()
-        buttons_layout = QHBoxLayout()
+        self.buttons_layout = QHBoxLayout()
 
-        # Creating buttons
+    def init_buttons(self):
+        """Creating buttons"""
         self.load_inpt_file_btn = QPushButton("Upload")
         self.load_inpt_file_btn.setFixedSize(100, 40)
         self.load_inpt_file_btn.clicked.connect(
@@ -65,30 +76,36 @@ class ConverterTab(QWidget):
         self.help_btn.setToolTip("Full instructions about this tab")
         self.help_btn.clicked.connect(self.show_help_dialog)
 
-        # Adding buttons to top line of UI(uplad, convert, clear, show first, save as, )
-        buttons_layout.addStretch(1)
-        buttons_layout.addWidget(
+
+    def setup_widgets_to_layout(self):
+        """Adding buttons to top line of UI(uplad, convert, clear, show first, save as, )"""
+        self.buttons_layout.addStretch(1)
+        self.buttons_layout.addWidget(
             self.load_inpt_file_btn, alignment=Qt.AlignmentFlag.AlignVCenter)
-        buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.convert_btn)
-        buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.clear_btn)
-        buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.show_btn)
-        buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.save_converted_btn)
-        buttons_layout.addSpacing(10)
-        buttons_layout.addWidget(self.help_btn)
-        buttons_layout.addStretch(1)
+        self.buttons_layout.addSpacing(10)
+        self.buttons_layout.addWidget(self.convert_btn)
+        self.buttons_layout.addSpacing(10)
+        self.buttons_layout.addWidget(self.clear_btn)
+        self.buttons_layout.addSpacing(10)
+        self.buttons_layout.addWidget(self.show_btn)
+        self.buttons_layout.addSpacing(10)
+        self.buttons_layout.addWidget(self.save_converted_btn)
+        self.buttons_layout.addSpacing(10)
+        self.buttons_layout.addWidget(self.help_btn)
+        self.buttons_layout.addStretch(1)
 
-        # Creating frame for info/buttons above main-buttons
-        frame = QFrame()
-        frame.setFrameShape(QFrame.Shape.Box)
-        frame.setFrameShadow(QFrame.Shadow.Sunken)
-        frame.setLineWidth(2)
-        frame.setFixedWidth(500)
 
-        # Creating boxlayout with buttons and Qlabels
+    def init_frame(self):
+        """Creating frame for info/buttons above main-buttons"""
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.Shape.Box)
+        self.frame.setFrameShadow(QFrame.Shadow.Sunken)
+        self.frame.setLineWidth(2)
+        self.frame.setFixedWidth(500)
+
+
+    def init_box_layout(self):
+        """Creating boxlayout with buttons and Qlabels"""
         frame_layout = QVBoxLayout()
         row_layout = QHBoxLayout()
         row_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -111,9 +128,11 @@ class ConverterTab(QWidget):
         row_layout.addWidget(self.drop_down_list)
 
         frame_layout.addLayout(row_layout)
-        frame.setLayout(frame_layout)
+        self.frame.setLayout(frame_layout)
 
-        # Createing preview window
+
+    def init_preview_area(self):
+        """Createing preview window"""
         self.pre_show_window_frame = QFrame()
         self.pre_show_window_frame.setFrameShape(QFrame.Shape.Box)
         self.pre_show_window_frame.setFrameShadow(QFrame.Shadow.Sunken)
@@ -141,14 +160,14 @@ class ConverterTab(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.pre_show_window_frame.setLayout(pre_show_window_frame_layout)
 
-        self.layout.addLayout(buttons_layout)
-        self.layout.addWidget(frame, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addLayout(self.buttons_layout)
+        self.layout.addWidget(self.frame, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.pre_show_window_frame)
         self.setLayout(self.layout)
 
-    # Help button info
 
     def show_help_dialog(self):
+        """Help button info"""
         self.main_window.statusBar().showMessage("Showing help dialog")
 
         help_dialog = QDialog()
@@ -180,14 +199,15 @@ class ConverterTab(QWidget):
         help_dialog.exec()
         self.main_window.statusBar().showMessage("Help tab closed")
 
-    # Func for debuging drop_down_list
     def get_combobox_list_elems(self):
+        """Func for debuging drop_down_list"""
         items = [self.drop_down_list.itemText(
             i) for i in range(self.drop_down_list.count())]
         return items
 
 
 class AboutTab(QWidget):
+    """AboutTab initializing and showing all needed widgets"""
     def __init__(self):
         super().__init__()
 
@@ -249,9 +269,11 @@ class AboutTab(QWidget):
         self.author_info_text = QLabel(
             '<span style="font-size:15px;">'
             '<b>Author:</b> '
-            '<a href="https://github.com/LacaluD" style="color:#007ACC; text-decoration:underline;">LacaluD</a><br>'
+            '<a href="https://github.com/LacaluD" style="color:#007ACC; '
+            'text-decoration:underline;">LacaluD</a><br>'
             '<b>Project link:</b> '
-            '<a href="https://github.com/LacaluD/GUI_Converter" style="color:#007ACC; text-decoration:underline;">GitHub Repository</a>'
+            '<a href="https://github.com/LacaluD/GUI_Converter" style="color:#007ACC; '
+            'text-decoration:underline;">GitHub Repository</a>'
             '</span>'
         )
 
