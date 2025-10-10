@@ -1,4 +1,4 @@
-""".pylintr This file is for created to change pylinter default values"""
+# .pylintr This file is for created to change pylinter default values
 
 [TYPECHECK]
 ignored-modules=PyQt6,PyQt6.QtWidgets,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtMultimedia,PyQt6.QtMultimediaWidgets

@@ -11,6 +11,7 @@ from .utils import Converter, Previewer, SideMethods
 
 class ConverterTab(QWidget):
     """ConvertTab initializing and showing all needed widgets"""
+
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
@@ -34,12 +35,12 @@ class ConverterTab(QWidget):
     def init_classes(self):
         """Creating instances of the classes"""
         self.side_funcs = SideMethods(conv_tab=self, main_window=self.main_window,
-                                    converter=None)
+                                      converter=None)
         self.converter = Converter(
             sf=self, main_window=self.main_window, side_func=self.side_funcs)
         self.side_funcs.converter = self.converter
         self.previewer = Previewer(conv_tab=self, main_window=self.main_window,
-                                converter=self.converter, side_funcs=self.side_funcs)
+                                   converter=self.converter, side_funcs=self.side_funcs)
 
         self.side_funcs.previewer = self.previewer
         self.converter.side_funcs = self.side_funcs
@@ -79,7 +80,6 @@ class ConverterTab(QWidget):
         self.help_btn.setToolTip("Full instructions about this tab")
         self.help_btn.clicked.connect(self.show_help_dialog)
 
-
     def setup_widgets_to_layout(self):
         """Adding buttons to top line of UI(uplad, convert, clear, show first, save as, )"""
         self.buttons_layout.addStretch(1)
@@ -97,7 +97,6 @@ class ConverterTab(QWidget):
         self.buttons_layout.addWidget(self.help_btn)
         self.buttons_layout.addStretch(1)
 
-
     def init_frame(self):
         """Creating frame for info/buttons above main-buttons"""
         self.frame = QFrame()
@@ -105,7 +104,6 @@ class ConverterTab(QWidget):
         self.frame.setFrameShadow(QFrame.Shadow.Sunken)
         self.frame.setLineWidth(2)
         self.frame.setFixedWidth(500)
-
 
     def init_box_layout(self):
         """Creating boxlayout with buttons and Qlabels"""
@@ -132,7 +130,6 @@ class ConverterTab(QWidget):
 
         frame_layout.addLayout(row_layout)
         self.frame.setLayout(frame_layout)
-
 
     def init_preview_area(self):
         """Createing preview window"""
@@ -164,10 +161,10 @@ class ConverterTab(QWidget):
         self.pre_show_window_frame.setLayout(pre_show_window_frame_layout)
 
         self.layout.addLayout(self.buttons_layout)
-        self.layout.addWidget(self.frame, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(
+            self.frame, alignment=Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.pre_show_window_frame)
         self.setLayout(self.layout)
-
 
     def show_help_dialog(self):
         """Help button info"""
@@ -211,9 +208,10 @@ class ConverterTab(QWidget):
 
 class AboutTab(QWidget):
     """AboutTab initializing and showing all needed widgets"""
+
     def __init__(self):
         super().__init__()
-       
+
         self.init_vbox_layout()
         self.setup_all_needed_widgets()
 

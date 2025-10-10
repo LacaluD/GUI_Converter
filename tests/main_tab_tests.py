@@ -1,6 +1,8 @@
 """This module contains tests for most of the situations"""
 
 # pylint: disable=too-many-lines
+# pylint: disable=too-many-public-methods
+
 
 import sys
 import json
@@ -939,8 +941,8 @@ class TestMainTab(unittest.TestCase):
                 self.previewer.player.setPosition.assert_called_once_with(0)
 
     @timing_decorator
-    def test_format_time_return_correct_vals(self):
-        """Checking if format_time method converts time correctly 
+    def test_format_time_return_correct_vals_invalid_vals(self):
+        """Checking if format_time method converts time correctly
         if msec is less than 0 or it`s str-type or None-type"""
         invalid_inputs = ['test', -1, None]
 
