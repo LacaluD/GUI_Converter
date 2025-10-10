@@ -537,10 +537,11 @@ class Previewer:
         seconds = seconds % 60
         return f"{minutes:02d}:{seconds:02d}"
 
+    # pylint: disable=inconsistent-return-statements
     def clear_vid_preview(self):
         """Clear preview title, widgets, layouts"""
         video_preview_widgets = [self.video_preview_widget, self.video_slider, self.play_btn,
-                                 self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
+                                self.pause_btn, self.current_vid_time, self.total_vid_time, self.vid_slider_layout]
 
         self.player.stop()
         self.player.setVideoOutput(None)
@@ -565,7 +566,8 @@ class Previewer:
 
     # Help funcs for preview_file method
     # pylint: disable=broad-exception-caught
-
+    # pylint: disable=inconsistent-return-statements
+    # pylint: disable=useless-return
     def read_convtd_data_from_doc_type_files(self, target_file):
         """Reading converted data from doc-type files"""
         try:
@@ -752,7 +754,9 @@ class SideMethods():
             return sce_videos_copy
         if ext_format == '.txt':
             return []
-        else:   # pylint: disable=no-else-return
+
+        # pylint: disable=no-else-return
+        else:
             return [str(ext_format)]
 
     # pylint: disable=broad-exception-caught
@@ -764,7 +768,7 @@ class SideMethods():
         try:
             file, _ = QFileDialog.getOpenFileName(
                 self.main_window, "Select File", "", ("Files "
-                                                      "(*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)"))
+                                "(*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)"))
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
 

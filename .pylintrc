@@ -1,7 +1,7 @@
 # .pylintr This file is for created to change pylinter default values
 
 [MASTER]
-init-hook='import sys; import os; sys.path.insert(0, os.path.abspath('.'))'
+init-hook='import sys; import os; sys.path.insert(0, sys.path.dirname(os.path.abspath(__file__)))'
 
 [TYPECHECK]
 ignored-modules=PyQt6,PyQt6.QtWidgets,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtMultimedia,PyQt6.QtMultimediaWidgets
