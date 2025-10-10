@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from ui.main_tab import ConverterTab
 from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
-                          SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO, PIC_EXTENSION_MAP)
+                          SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO)
 
 
 def timing_decorator(func):

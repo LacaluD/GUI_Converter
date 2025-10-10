@@ -114,6 +114,7 @@ class Converter():
                 writer.writerow(row)
             self.main_window.statusBar().showMessage("Finished converting json to csv")
 
+    # pylint: disable=inconsistent-return-statements
     def convert_audio_formats(self, inp, out):
         """Convertation logic for audio formats"""
         inp_full_path = Path(inp)
@@ -185,6 +186,7 @@ class Converter():
         except OSError as e:
             return self.main_window.statusBar().showMessage(str(e))
 
+    # pylint: disable=broad-exception-caught
     def get_save_filename(self, default_name, filters):
         """Universal func to save file and return filepath"""
         try:
@@ -200,6 +202,7 @@ class Converter():
 
         return self.doc_file_path
 
+    # pylint: disable=broad-exception-caught
     def save_audio_video_conv_file(self, out):
         """Method to save audio_vido converted file"""
         ext = Path(out).suffix.lower().lstrip('.')
@@ -292,7 +295,6 @@ class Converter():
             return
 
         self.main_window.statusBar().showMessage("Successfully converted")
-
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -402,6 +404,7 @@ class Previewer:
         self.read_convtd_data_from_doc_type_files(target_file=target_file)
 
         # Show up the UI with loaded doc-type-file
+        # pylint: disable=too-many-positional-arguments
         self.show_ui_for_doc_type_files(prev_title=prev_title, prev_info=prev_info,
                                         prev_label=prev_label, content=self.convtd_file_content)
 
@@ -548,7 +551,7 @@ class Previewer:
             self.player.positionChanged.disconnect()
             self.player.durationChanged.disconnect()
         except (TypeError, RuntimeError):
-            return
+            return None
 
         for elem in video_preview_widgets:
             if elem:
@@ -560,8 +563,9 @@ class Previewer:
 
         self.player.disconnect()
 
-
     # Help funcs for preview_file method
+    # pylint: disable=broad-exception-caught
+
     def read_convtd_data_from_doc_type_files(self, target_file):
         """Reading converted data from doc-type files"""
         try:
@@ -751,6 +755,7 @@ class SideMethods():
         else:   # pylint: disable=no-else-return
             return [str(ext_format)]
 
+    # pylint: disable=broad-exception-caught
     def upload_inpt_file(self):
         """Upload button logic"""
         self.main_window.statusBar().showMessage("Upload file clicked")
@@ -759,7 +764,7 @@ class SideMethods():
         try:
             file, _ = QFileDialog.getOpenFileName(
                 self.main_window, "Select File", "", ("Files "
-                            "(*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)"))
+                                                      "(*.txt *.mp3 *.mp4 *.docx *.jpg *.jpeg *.png *.webp *.json *.csv *.wav)"))
         except Exception as e:
             self.main_window.statusBar().showMessage(str(e))
 
@@ -863,7 +868,8 @@ class SideMethods():
             self.main_window.statusBar().showMessage("No converted file to save")
             return None
 
-        else:   # pylint: disable=no-else-return
+        # pylint: disable=no-else-return
+        else:
             self.main_window.statusBar().showMessage(
                 "Error happened during saving output file")
             return None
@@ -886,15 +892,17 @@ class SideMethods():
             if file_ext == "csv" and out_file_ext == "json":
                 self.converter.convert_csv_json(inp=inp_file)
                 return None
-            elif file_ext == "json" and out_file_ext == "csv":
+            if file_ext == "json" and out_file_ext == "csv":
                 self.converter.convert_json_csv(inp=inp_file)
                 return None
-            elif file_ext == "csv" and out_file_ext == "txt":
+            if file_ext == "csv" and out_file_ext == "txt":
                 self.converter.convert_csv_txt(inp=inp_file)
                 return None
-            elif file_ext == "json" and out_file_ext == "txt":
+            if file_ext == "json" and out_file_ext == "txt":
                 self.converter.convert_json_txt(inp=inp_file)
                 return None
-        else:   # pylint: disable=no-else-return
+
+        # pylint: disable=no-else-return
+        else:
             self.main_window.statusBar().showMessage("Formats are unsupported")
         return None
