@@ -409,8 +409,8 @@ class Previewer:
         self.show_ui_for_doc_type_files(prev_title=prev_title, prev_info=prev_info,
                                         prev_label=prev_label, content=self.convtd_file_content)
 
-
-    def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
+    def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
         """Preview picture logic"""
         # Give hash-id for current running picture
         identifier = self.get_hashid_for_picture(
@@ -617,7 +617,7 @@ class Previewer:
             self.main_window.statusBar().showMessage("No file loaded")
             return None
 
-    # pylint: disable=too-many-arguments, too-many-positional-arguments
+    # pylint: disable=too-many-positional-arguments
     def setup_ui_preview_picture(self, prev_title, prev_info, prev_label, identifier, curr_file):
         """Setting up the UI"""
         prev_title.hide()
