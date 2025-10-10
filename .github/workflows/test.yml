@@ -22,7 +22,7 @@ jobs:
         pip install pyqt6==6.9.1
         pip install pyqt6-qt6==6.9.2
         pip install pyqt6-sip==13.10.2
-        pip install pyqt6-stubs==6.9.1
+        pip install pyqt6-stubs==20250824
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
