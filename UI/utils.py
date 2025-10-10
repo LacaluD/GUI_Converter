@@ -409,8 +409,8 @@ class Previewer:
         self.show_ui_for_doc_type_files(prev_title=prev_title, prev_info=prev_info,
                                         prev_label=prev_label, content=self.convtd_file_content)
 
-    # pylint: disable=too-many-arguments
-    def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):
+
+    def preview_picture(self, prev_title, prev_info, prev_label, curr_file, convert_file):  # pylint: disable=too-many-arguments
         """Preview picture logic"""
         # Give hash-id for current running picture
         identifier = self.get_hashid_for_picture(
