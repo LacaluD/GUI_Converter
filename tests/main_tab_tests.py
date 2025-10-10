@@ -1,7 +1,9 @@
 """This module contains tests for most of the situations"""
 
+
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-public-methods
+# pylint: disable=protected-access
 
 
 import sys
@@ -20,11 +22,12 @@ from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from ui.main_tab import ConverterTab
-from ui.constants import *
+from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
+                          SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO, PIC_EXTENSION_MAP)
 
 
-# Timing decorator for performance logging
 def timing_decorator(func):
+    """Timing decorator for performance logging"""
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
         result = func(*args, **kwargs)
@@ -39,6 +42,7 @@ def timing_decorator(func):
 
 
 class TestMainTab(unittest.TestCase):
+    """TestMainTab main class for tests"""
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication(sys.argv)
@@ -633,8 +637,8 @@ class TestMainTab(unittest.TestCase):
                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Dialog error", error_calls)
 
-    # Tests for save_audio_video_conv_file logic
 
+    # Tests for save_audio_video_conv_file logic
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test.mp4', 'Video Files (*.mp4)'))
     def test_save_audio_video_conv_file_mp4(self, mock_open_file):
@@ -759,8 +763,8 @@ class TestMainTab(unittest.TestCase):
                         for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Error: There is no file to convert", message_call)
 
-    # Tests for preview_object method (routing method to preview functions)
 
+    # Tests for preview_object method (routing method to preview functions)
     @timing_decorator
     def test_preview_object_no_file_uploaded(self):
         """Test for preview_object function if no file uploaded"""
@@ -1041,7 +1045,7 @@ class TestMainTab(unittest.TestCase):
 
         message_call = [call.args[0]
                         for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
-        self.assertIn("Error while getting content", message_call)
+        self.assertIn("Error while getting content: Invalid JSON", message_call)
 
     @timing_decorator
     @patch('builtins.open', side_effect=Exception("Invalid CSV"))
@@ -1055,7 +1059,7 @@ class TestMainTab(unittest.TestCase):
 
         message_call = [call.args[0]
                         for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
-        self.assertIn("Error while getting content", message_call)
+        self.assertIn("Error while getting content: Invalid CSV", message_call)
 
     # Tests for preview_file method
     @timing_decorator
@@ -1241,7 +1245,7 @@ class TestMainTab(unittest.TestCase):
 
         message_call = [call.args[0]
                         for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
-        self.assertIn("Converted video is not avalible", message_call)
+        self.assertIn("Unexpected error during loading video", message_call)
 
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=True)
