@@ -25,7 +25,7 @@ Project is built for users who want`s to have useful tool to make life easier.
 6. python main.py
 
 ### With poetry
-1. poetry install 
+1. poetry install
 2. poetry run python main.py
 3. poetry show --tree    # To check if all dependencies installed correctly
 
