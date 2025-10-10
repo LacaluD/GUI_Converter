@@ -15,12 +15,7 @@ class ConverterTab(QWidget):
         super().__init__()
         self.main_window = main_window
 
-        # Values by default
-        self.preview_label = None
-        self.converter = None
-        self.previewer = None
-        self.side_funcs = None
-
+        self.setup_default_values()
         self.init_classes()
         self.init_layouts()
         self.init_buttons()
@@ -28,6 +23,13 @@ class ConverterTab(QWidget):
         self.init_frame()
         self.init_box_layout()
         self.init_preview_area()
+
+    def setup_default_values(self):
+        """Values by default"""
+        self.preview_label = None
+        self.converter = None
+        self.previewer = None
+        self.side_funcs = None
 
     def init_classes(self):
         """Creating instances of the classes"""
@@ -211,7 +213,7 @@ class AboutTab(QWidget):
     """AboutTab initializing and showing all needed widgets"""
     def __init__(self):
         super().__init__()
-        
+       
         self.init_vbox_layout()
         self.setup_all_needed_widgets()
 

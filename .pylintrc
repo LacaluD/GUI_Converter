@@ -1,0 +1,13 @@
+""".pylintr This file is for created to change pylinter default values"""
+
+[TYPECHECK]
+ignored-modules=PyQt6,PyQt6.QtWidgets,PyQt6.QtCore,PyQt6.QtGui,PyQt6.QtMultimedia,PyQt6.QtMultimediaWidgets
+
+[FORMAT]
+max-line-length=120
+indent-string='    '
+
+[DESIGN]
+max-attributes=30
+max-public-methods=30
+max-args=8

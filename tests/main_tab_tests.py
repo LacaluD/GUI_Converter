@@ -1,5 +1,7 @@
 """This module contains tests for most of the situations"""
 
+# pylint: disable=too-many-lines
+
 import sys
 import json
 import time
@@ -88,8 +90,8 @@ class TestMainTab(unittest.TestCase):
         self.all_sces = set(
             self.sce_pics + self.sce_files + self.sce_audio_video)
 
-
     # Tests for get_extension_format method
+
     @timing_decorator
     def test_get_extension_format(self):
         """Test for all extension in supported set"""
@@ -105,8 +107,8 @@ class TestMainTab(unittest.TestCase):
         result = self.side_funcs.get_extension_format('dummyfile')
         self.assertEqual(result, "no extension")
 
-
     # Tests for get_output_format_list method
+
     @timing_decorator
     def test_get_output_list_picture(self):
         """Test for picture-type file extension"""
@@ -157,8 +159,8 @@ class TestMainTab(unittest.TestCase):
         result = self.side_funcs.get_output_file_format_list()
         self.assertEqual(result, ['.unknown'])
 
-
     # Tests for upload_inpt_file method
+
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getOpenFileName")
     def test_upload_inpt_file_no_choosen(self, mock_dialog):
@@ -185,8 +187,8 @@ class TestMainTab(unittest.TestCase):
         self.assertIsNone(self.side_funcs.current_file)
         self.conv_tab.drop_down_list.addItems.assert_not_called()
 
-
     # Tests for clear_all branches method
+
     @timing_decorator
     def test_clear_text_preview(self):
         """Test for clear text preview widgets"""
@@ -194,9 +196,9 @@ class TestMainTab(unittest.TestCase):
 
         # Patch methods that needs to be called inside clear_all_fields
         with patch.object(self.side_funcs, 'reset_current_file',
-                        wraps=self.side_funcs.reset_current_file) as mock_reset, \
+                          wraps=self.side_funcs.reset_current_file) as mock_reset, \
                 patch.object(self.side_funcs, 'clear_file_prev',
-                            wraps=self.side_funcs.clear_file_prev) as mock_clear_text:
+                             wraps=self.side_funcs.clear_file_prev) as mock_clear_text:
 
             self.side_funcs.clear_all_fields()
 
@@ -217,9 +219,9 @@ class TestMainTab(unittest.TestCase):
 
         # Patch methods that needs to be called inside clear_all_fields
         with patch.object(self.side_funcs, 'reset_current_file',
-                        wraps=self.side_funcs.reset_current_file) as mock_reset, \
+                          wraps=self.side_funcs.reset_current_file) as mock_reset, \
                 patch.object(self.side_funcs, 'clear_image_prev',
-                            wraps=self.side_funcs.clear_image_prev) as mock_clear_image:
+                             wraps=self.side_funcs.clear_image_prev) as mock_clear_image:
 
             self.side_funcs.clear_all_fields()
 
@@ -235,9 +237,9 @@ class TestMainTab(unittest.TestCase):
         self.previewer.new_pixmap = None
 
         with patch.object(self.side_funcs, 'reset_current_file',
-                        wraps=self.side_funcs.reset_current_file) as mock_reset, \
+                          wraps=self.side_funcs.reset_current_file) as mock_reset, \
                 patch.object(self.previewer, 'clear_vid_preview',
-                            wraps=self.previewer.clear_vid_preview) as mock_clear_vid:
+                             wraps=self.previewer.clear_vid_preview) as mock_clear_vid:
 
             self.side_funcs.clear_all_fields()
             mock_reset.assert_called()
@@ -255,13 +257,13 @@ class TestMainTab(unittest.TestCase):
         self.previewer.video_preview_widget = None
 
         with patch.object(self.side_funcs, 'reset_current_file',
-                            wraps=self.side_funcs.reset_current_file) as mock_reset, \
+                          wraps=self.side_funcs.reset_current_file) as mock_reset, \
                 patch.object(self.side_funcs, 'clear_file_prev',
-                            wraps=self.side_funcs.clear_file_prev) as mock_clear_text, \
+                             wraps=self.side_funcs.clear_file_prev) as mock_clear_text, \
                 patch.object(self.side_funcs, 'clear_image_prev',
-                            wraps=self.side_funcs.clear_image_prev) as mock_clear_image, \
+                             wraps=self.side_funcs.clear_image_prev) as mock_clear_image, \
                 patch.object(self.previewer, 'clear_vid_preview',
-                            wraps=self.previewer.clear_vid_preview) as mock_clear_vid:
+                             wraps=self.previewer.clear_vid_preview) as mock_clear_vid:
 
             self.side_funcs.clear_all_fields()
 
@@ -271,8 +273,8 @@ class TestMainTab(unittest.TestCase):
             mock_clear_vid.assert_not_called()
             self.fake_main_window.statusBar().showMessage.assert_any_call("Nothing to clear")
 
-
     # Tests for all clearing methods
+
     @timing_decorator
     def test_reset_current_file(self):
         """Test for reset_current_file method"""
@@ -315,7 +317,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.player.disconnect.assert_called_once()
 
         widgets = [self.previewer.video_preview_widget, self.previewer.play_btn,
-                   self.previewer.pause_btn, self.previewer.current_vid_time, 
+                   self.previewer.pause_btn, self.previewer.current_vid_time,
                    self.previewer.total_vid_time, self.previewer.vid_slider_layout]
 
         for elem in widgets:
@@ -381,8 +383,8 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_json_csv.assert_called_with(
             inp='test.json')
 
-
     # Tests for all convertation logic for doc-type files
+
     @timing_decorator
     @patch('builtins.open', new_callable=mock_open, read_data="col1/col2/nval1,val2\n")
     def test_convert_csv_txt(self, mock_open_file):
@@ -460,7 +462,7 @@ class TestMainTab(unittest.TestCase):
         ]
 
         written_json = "".join(call.args[0]
-                        for call in file_handle.write.call_args_list)
+                               for call in file_handle.write.call_args_list)
         self.assertEqual(json.loads(written_json), expected_data)
 
         self.fake_main_window.statusBar.return_value.showMessage.assert_called_with(
@@ -483,7 +485,7 @@ class TestMainTab(unittest.TestCase):
         file_handle = mock_open_file.return_value
 
         write_fields = ''.join(call.args[0]
-                        for call in file_handle.write.call_args_list)
+                               for call in file_handle.write.call_args_list)
         self.assertIn("a,b", write_fields)
         self.assertIn("1,2", write_fields)
 
@@ -505,7 +507,7 @@ class TestMainTab(unittest.TestCase):
         file_handle = mock_open_file.return_value
 
         write_fields = ''.join(call.args[0]
-                        for call in file_handle.write.call_args_list)
+                               for call in file_handle.write.call_args_list)
         self.assertEqual(write_fields.strip(), '')
 
     @timing_decorator
@@ -579,7 +581,7 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_audio_formats.assert_not_called()
 
         error_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                      for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Got error in _convert_audio_video method", error_call)
 
     @timing_decorator
@@ -590,11 +592,11 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_audio_formats.assert_not_called()
 
         error_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                      for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Got error in _convert_audio_video method", error_call)
 
-    # Test for save_filename functional
 
+    # Test for save_filename functional
     @timing_decorator
     @patch("PyQt6.QtWidgets.QFileDialog.getSaveFileName", return_value=('test_test.csv', 'Text Files (*.csv)'))
     def test_get_save_filename_success(self, _mock_save_filename):
@@ -614,7 +616,7 @@ class TestMainTab(unittest.TestCase):
         self.assertIsNone(result)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Save cancelled", message_call)
 
     @timing_decorator
@@ -626,7 +628,7 @@ class TestMainTab(unittest.TestCase):
         self.assertIsNone(result)
 
         error_calls = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                       for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Dialog error", error_calls)
 
     # Tests for save_audio_video_conv_file logic
@@ -640,7 +642,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(result, 'test.mp4')
 
         error_calls = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                       for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertNotIn("Save cancelled", error_calls)
         self.assertTrue(all('error' not in msg.lower() for msg in error_calls))
 
@@ -656,7 +658,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(result, 'test.mp3')
 
         error_calls = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                       for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertNotIn("Save cancelled", error_calls)
         self.assertTrue(all('error' not in msg.lower() for msg in error_calls))
 
@@ -680,7 +682,7 @@ class TestMainTab(unittest.TestCase):
         self.assertIsNone(result)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Dialog error", message_call)
 
     # Tests for save_img dunc for all formats
@@ -697,7 +699,7 @@ class TestMainTab(unittest.TestCase):
             'out.jpeg', format='jpeg', optimize=True, quality=85, progressive=True)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Successfully saved as: out.jpeg", message_call)
 
     @timing_decorator
@@ -712,7 +714,7 @@ class TestMainTab(unittest.TestCase):
             'out.png', format='png', optimize=True, compress_level=8)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Successfully saved as: out.png", message_call)
 
     @timing_decorator
@@ -727,7 +729,7 @@ class TestMainTab(unittest.TestCase):
             'out.webp', format='webp', quality=85, lossless=False, method=6)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Successfully saved as: out.webp", message_call)
 
     @timing_decorator
@@ -740,11 +742,11 @@ class TestMainTab(unittest.TestCase):
         mock_img.save.assert_not_called()
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Save error", message_call)
 
-
     # Test for convert_files method (routing method to convert functions)
+
     @timing_decorator
     def test_convert_files_no_file_to_convert(self):
         """Test if no file to convert"""
@@ -752,11 +754,11 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.convert_files()
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Error: There is no file to convert", message_call)
 
-
     # Tests for preview_object method (routing method to preview functions)
+
     @timing_decorator
     def test_preview_object_no_file_uploaded(self):
         """Test for preview_object function if no file uploaded"""
@@ -764,7 +766,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.preview_object()
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Upload file first", message_call)
 
     @timing_decorator
@@ -775,7 +777,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.preview_object()
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Unsupported file format", message_call)
 
     @timing_decorator
@@ -844,8 +846,8 @@ class TestMainTab(unittest.TestCase):
             curr_file='test.wav',
         )
 
-
     # Tests for support methods
+
     @timing_decorator
     def test_play_vid(self):
         """Checking if play_vid is calling player.play"""
@@ -938,7 +940,8 @@ class TestMainTab(unittest.TestCase):
 
     @timing_decorator
     def test_format_time_return_correct_vals(self):
-        """Checking if format_time method converts time correctly if msec is less than 0 or it`s str-type or None-type"""
+        """Checking if format_time method converts time correctly 
+        if msec is less than 0 or it`s str-type or None-type"""
         invalid_inputs = ['test', -1, None]
 
         for elem in invalid_inputs:
@@ -946,8 +949,8 @@ class TestMainTab(unittest.TestCase):
                 result = self.previewer.format_time(elem)
                 self.assertEqual(result, '00:00')
 
-
     # Tests for pil_to_pixmap convertation method
+
     @timing_decorator
     @patch('ui.utils.QPixmap.fromImage')
     @patch('ui.utils.ImageQt')
@@ -987,9 +990,9 @@ class TestMainTab(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     self.previewer.pil_to_pixmap(elem)
 
-
     # Tests for preview_files method and support methods
     # Support method: read_convtd_data_from_doc_type_files
+
     @timing_decorator
     @patch('builtins.open', new_callable=mock_open, read_data='{"test": "test"}')
     def test_read_convtd_data_from_doc_type_files_valid_json(self, mock_open_file):
@@ -1004,7 +1007,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(self.previewer.last_loaded_file, fake_file_path)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn(f"Got content from: {fake_file_path}", message_call)
 
     @timing_decorator
@@ -1021,7 +1024,7 @@ class TestMainTab(unittest.TestCase):
         self.assertEqual(self.previewer.last_loaded_file, fake_file_path)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn(f"Got content from: {fake_file_path}", message_call)
 
     @timing_decorator
@@ -1035,7 +1038,7 @@ class TestMainTab(unittest.TestCase):
             fake_file_path, 'r', encoding='utf-8')
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Error while getting content", message_call)
 
     @timing_decorator
@@ -1049,7 +1052,7 @@ class TestMainTab(unittest.TestCase):
             fake_file_path, 'r', encoding='utf-8')
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Error while getting content", message_call)
 
     # Tests for preview_file method
@@ -1065,7 +1068,7 @@ class TestMainTab(unittest.TestCase):
                                     curr_file=self.conv_tab.converter.current_file)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("No file loaded", message_call)
 
     @timing_decorator
@@ -1076,12 +1079,12 @@ class TestMainTab(unittest.TestCase):
         self.conv_tab.converter.current_file = fake_file_path
 
         self.previewer.preview_file(prev_title=self.conv_tab.preview_title,
-                                prev_info=self.conv_tab.preview_info,
-                                prev_label=self.conv_tab.preview_label, 
-                                curr_file=self.conv_tab.converter.current_file)
+                                    prev_info=self.conv_tab.preview_info,
+                                    prev_label=self.conv_tab.preview_label,
+                                    curr_file=self.conv_tab.converter.current_file)
 
         message_call = [call.args[0]
-            for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("This file is already loaded", message_call)
 
     @timing_decorator
@@ -1095,15 +1098,15 @@ class TestMainTab(unittest.TestCase):
                 patch.object(self.previewer, "show_ui_for_doc_type_files") as mock_show:
 
             self.previewer.preview_file(prev_title=self.conv_tab.preview_title,
-                                    prev_info=self.conv_tab.preview_info,
-                                    prev_label=self.conv_tab.preview_label, 
-                                    curr_file=self.conv_tab.converter.current_file)
+                                        prev_info=self.conv_tab.preview_info,
+                                        prev_label=self.conv_tab.preview_label,
+                                        curr_file=self.conv_tab.converter.current_file)
 
             mock_read.assert_called_once_with(
                 target_file=Path("/test/output.txt").resolve())
             mock_show.assert_called_with(prev_title=self.conv_tab.preview_title,
-                                    prev_info=self.conv_tab.preview_info,
-                                    prev_label=self.conv_tab.preview_label, content="TEST")
+                                         prev_info=self.conv_tab.preview_info,
+                                         prev_label=self.conv_tab.preview_label, content="TEST")
 
     @timing_decorator
     def test_preview_file_exception_stops_ui(self):
@@ -1111,15 +1114,15 @@ class TestMainTab(unittest.TestCase):
         self.previewer.converter.doc_file_path = None
         self.conv_tab.converter.current_file = "/test/current.json"
 
-        with patch.object(self.previewer, 
-                    "read_convtd_data_from_doc_type_files", side_effect=Exception('fail')), \
+        with patch.object(self.previewer,
+                          "read_convtd_data_from_doc_type_files", side_effect=Exception('fail')), \
                 patch.object(self.previewer, "show_ui_for_doc_type_files") as mock_show:
-                    
+
             with self.assertRaises(Exception):
                 self.previewer.preview_file(prev_title=self.conv_tab.preview_title,
-                                        prev_info=self.conv_tab.preview_info,
-                                        prev_label=self.conv_tab.preview_label,
-                                        curr_file=self.conv_tab.converter.current_file)
+                                            prev_info=self.conv_tab.preview_info,
+                                            prev_label=self.conv_tab.preview_label,
+                                            curr_file=self.conv_tab.converter.current_file)
                 mock_show.assert_not_called()
 
     # Tests for help_funcs: set_up_video_audio_output; check_file_to_play
@@ -1132,7 +1135,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.player.setSource.assert_called_once()
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn(f"Playing: {fake_file_path}", message_call)
 
     @timing_decorator
@@ -1142,7 +1145,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.set_up_video_audio_output("invalid/path/test.mp4")
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Check filename or file path", message_call)
 
     @timing_decorator
@@ -1152,7 +1155,7 @@ class TestMainTab(unittest.TestCase):
         self.previewer.set_up_video_audio_output(None)
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Check filename or file path", message_call)
 
     # Tests for check_file_to_play
@@ -1191,21 +1194,21 @@ class TestMainTab(unittest.TestCase):
 
         self.previewer.check_file_to_play(None)
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("No file loaded", message_call)
 
-
     # Tests for preview_video method
+
     @timing_decorator
     @patch('pathlib.Path.exists', return_value=False)
     def test_preview_video_method_no_input(self, _mock_exists):
         """Test preview_video method if no input file loaded"""
-        self.previewer.preview_video(prev_title=self.conv_tab.preview_title, 
-                                    prev_info=self.conv_tab.preview_info,
-                                    prev_label=self.conv_tab.preview_label, curr_file='fake.mp4')
+        self.previewer.preview_video(prev_title=self.conv_tab.preview_title,
+                                     prev_info=self.conv_tab.preview_info,
+                                     prev_label=self.conv_tab.preview_label, curr_file='fake.mp4')
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("No file loaded", message_call)
 
     @timing_decorator
@@ -1230,12 +1233,12 @@ class TestMainTab(unittest.TestCase):
     @patch('pathlib.Path.exists', return_value=True)
     def test_preview_video_method_unsupported_filetype(self, _mock_exists):
         """Test preview_video method if unsupported file type loaded"""
-        self.previewer.preview_video(prev_title=self.conv_tab.preview_title, 
-                                    prev_info=self.conv_tab.preview_info,
-                                    prev_label=self.conv_tab.preview_label, curr_file='fake.txt')
+        self.previewer.preview_video(prev_title=self.conv_tab.preview_title,
+                                     prev_info=self.conv_tab.preview_info,
+                                     prev_label=self.conv_tab.preview_label, curr_file='fake.txt')
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Converted video is not avalible", message_call)
 
     @timing_decorator
@@ -1246,11 +1249,11 @@ class TestMainTab(unittest.TestCase):
         self.previewer.check_file_to_play = Mock(return_value='fake.mp4')
 
         self.previewer.preview_video(prev_title=self.conv_tab.preview_title,
-                                    prev_info=self.conv_tab.preview_info,
-                                    prev_label=self.conv_tab.preview_label, curr_file='fake.mp4')
+                                     prev_info=self.conv_tab.preview_info,
+                                     prev_label=self.conv_tab.preview_label, curr_file='fake.mp4')
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn(
             "Audio player already exists with this file", message_call)
 
@@ -1278,7 +1281,7 @@ class TestMainTab(unittest.TestCase):
                                        curr_file='fake.png', convert_file=None)
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("No file loaded", message_call)
 
     @timing_decorator
@@ -1295,7 +1298,7 @@ class TestMainTab(unittest.TestCase):
                                        curr_file='fake.png', convert_file=None)
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("This image is already loaded", message_call)
 
         self.previewer.new_pixmap.reset_mock()
@@ -1313,7 +1316,7 @@ class TestMainTab(unittest.TestCase):
                                        curr_file='fake.png', convert_file=None)
 
         message_call = [call.args[0]
-                for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
+                        for call in self.fake_main_window.statusBar.return_value.showMessage.call_args_list]
         self.assertIn("Failed to load image", message_call)
 
     @timing_decorator

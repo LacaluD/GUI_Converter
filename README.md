@@ -35,7 +35,7 @@ Project Structure
 ```text
 GUI_Converter/
 │
-├── UI/                     # Iface folder
+├── ui/                     # Iface folder
 │   ├── __init__.py
 │   ├── main_tab.py         # Main tab iface logic
 │   ├── constants.py        # Constants
@@ -49,6 +49,7 @@ GUI_Converter/
 ├── .gitignore              # Git ignore file
 ├── poetry.lock             # Poetry lock file
 ├── pyproject.toml          # Poetry project file
+├── .pylintrc               # File to set default values for pylinter
 └── README.md
 ```
 

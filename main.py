@@ -10,8 +10,9 @@ from ui.main_tab import ConverterTab, AboutTab
 
 
 # pylint: disable=too-few-public-methods
-class MainWindow(QMainWindow): 
+class MainWindow(QMainWindow):
     """Initializing MainWindow class"""
+
     def __init__(self):
         super().__init__()
 
@@ -35,7 +36,6 @@ class MainWindow(QMainWindow):
         tabs.addTab(tab2_info, "About")
 
         self.setCentralWidget(tabs)
-
 
     def on_tab_changed(self, index, tabs, status_bar):
         """Updating page status"""
