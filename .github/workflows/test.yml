@@ -11,7 +11,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install OpenGL dependencies
-      run: sudo apt-get install -y libegl1
+      run: |
+        sudo apt-get install -y libegl1 libpulse0 libx11-6 libxext6
+        sudo apt-get install -y libxrender1 libxcb1 libfontconfig1
+        sudo apt-get install -y libasound2 gstreamer1.0-libav gstreamer1.0-plugins-base
+        sudo apt-get install -y gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+        sudo apt-get install -y gstreamer1.0-plugins-ugly gstreamer1.0-tools
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
