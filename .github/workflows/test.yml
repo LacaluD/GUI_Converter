@@ -18,7 +18,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pylint
-        pip install pillow==11.3.10
+        pip install pillow==11.3.0
         pip install pyqt6==6.9.1
         pip install pyqt6-qt6==6.9.2
         pip install pyqt6-sip==13.10.2
@@ -29,10 +29,17 @@ jobs:
     - name: unit test
       run: |
         python -m unittest tests/main_tab_tests.py
-    - name: Send failure mesage
+    - name: Send failure message
       if: failure()
       uses: an3park/telegram-action@v1
       with:
         bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
         message: 'Build failed\!'
+    - name: Send success message
+      if: success()
+      uses: an3park/telegram-action@v1
+      with:
+        bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+        message: 'Build was successfull\!'
