@@ -752,6 +752,7 @@ class SideMethods():
         if ext_format in SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO:
             sce_videos_copy.remove(ext_format)
             return sce_videos_copy
+        # pylint: disable=no-else-return
         if ext_format == '.txt':
             return []
 
@@ -868,6 +869,7 @@ class SideMethods():
             c.save_audio_video_conv_file(self.extension_format)
             return None
 
+        # pylint: disable=no-else-return
         if not sf_conv_out_img or not sf_conv_out_img_form:
             self.main_window.statusBar().showMessage("No converted file to save")
             return None
