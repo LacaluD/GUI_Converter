@@ -6,7 +6,6 @@
 # pylint: disable=protected-access
 
 
-
 import sys
 import json
 import time
