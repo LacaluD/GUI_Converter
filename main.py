@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QTabWidget)
 from PyQt6.QtCore import QSize
 
-# pylint: disable=import-error
 from ui.main_tab import ConverterTab, AboutTab
 
 

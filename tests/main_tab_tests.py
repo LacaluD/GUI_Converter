@@ -21,9 +21,7 @@ from PyQt6.QtCore import QUrl
 from PyQt6.QtMultimediaWidgets import QVideoWidget
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
-# pylint: disable=import-error
 from ui.main_tab import ConverterTab
-# pylint: disable=import-error
 from ui.constants import (SUPPORTED_CONVERT_EXTENSIONS_PICTURES, SUPPORTED_CONVERT_EXTENSIONS_FILES,
                           SUPPORTED_CONVERT_EXTENSIONS_VIDEO_AUDIO)
 
